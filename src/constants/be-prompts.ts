@@ -113,8 +113,8 @@ Your final output must be a single, raw JSON object, without any surrounding tex
     },
     phase7: (name, discipline, context, mode = 'fullscale', scope = 'internal', teamSize = 'medium', complexity = 'typical') => {
         const startDate = new Date();
-        startDate.setDate(startDate.getDate() + 14);
-        const projectStartDate = startDate.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        startDate.setDate(startDate.getDate() + 7);
+        const projectStartDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
         const wbsInstruction = complexity === 'easy' ? TEAM_SIZE_INSTRUCTIONS.wbs.small : complexity === 'complex' ? TEAM_SIZE_INSTRUCTIONS.wbs.large : TEAM_SIZE_INSTRUCTIONS.wbs.medium;
         const teamSizeInstruction = wbsInstruction;

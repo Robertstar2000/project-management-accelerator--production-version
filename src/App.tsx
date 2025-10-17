@@ -1,11 +1,13 @@
 
 
 import { GoogleGenAI } from "@google/genai";
-import React, { useState, useEffect, useMemo } from 'react';
+import { AWSBedrockService } from './utils/awsBedrockService';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from './components/Header';
 import { LandingPage } from './views/LandingPage';
 import { ProjectDashboard } from './views/ProjectDashboard';
 import { NewProjectModal } from './components/NewProjectModal';
+import { UpgradeModal } from './components/UpgradeModal';
 import { DeleteProjectConfirmationModal } from './components/DeleteProjectConfirmationModal';
 import { HelpModal } from './components/HelpModal';
 import { GlobalStyles } from './styles/GlobalStyles';
@@ -18,7 +20,7 @@ import { subscribeToUpdates, notifyUpdate } from './utils/syncService';
 import { Project, Task, Notification } from './types';
 
 const App = () => {
-  const [ai, setAi] = useState<GoogleGenAI | null>(null);
+  const [ai, setAi] = useState<GoogleGenAI | AWSBedrockService | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,8 +29,10 @@ const App = () => {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState('pending');
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
-  const [appKey, setAppKey] = useState(0); // Used to force re-renders on sync
+  const [appKey, setAppKey] = useState(0);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userLimits, setUserLimits] = useState({ projectLimit: 3, projectCount: 0 });
 
   const userProjects = useMemo(() => {
     if (!projects || !currentUser) return [];
@@ -43,29 +47,33 @@ const App = () => {
         .filter((p): p is Project => !!p && userProjectIds.has(p.id));
   }, [projects, userProjects, recentlyViewedIds]);
 
-  const reloadStateFromStorage = () => {
-    logAction('Sync Update', 'BroadcastChannel', { message: 'Forcing state reload from localStorage' });
-    const storedProjects = localStorage.getItem('hmap-projects');
-    if (storedProjects) {
-        setProjects(JSON.parse(storedProjects));
+  const reloadStateFromStorage = useCallback(() => {
+    try {
+      logAction('Sync Update', 'BroadcastChannel', { message: 'Forcing state reload' });
+      const storedProjects = localStorage.getItem('hmap-projects');
+      if (storedProjects) {
+          setProjects(JSON.parse(storedProjects));
+          const selectedProjectId = localStorage.getItem('hmap-selected-project-id');
+          if (selectedProjectId && selectedProject && selectedProjectId === selectedProject.id) {
+              const updatedSelectedProject = JSON.parse(storedProjects).find(p => p.id === selectedProjectId);
+              if (updatedSelectedProject) {
+                  setSelectedProject(updatedSelectedProject);
+              }
+          }
+      }
+      setAppKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to reload state:', error);
     }
-    const selectedProjectId = localStorage.getItem('hmap-selected-project-id');
-    if (selectedProjectId && selectedProject && selectedProjectId === selectedProject.id) {
-        const updatedSelectedProject = JSON.parse(storedProjects).find(p => p.id === selectedProjectId);
-        if (updatedSelectedProject) {
-            setSelectedProject(updatedSelectedProject);
-        }
-    }
-    setAppKey(prev => prev + 1); // Force update
-  };
+  }, [selectedProject]);
 
   useEffect(() => {
     const unsubscribe = subscribeToUpdates(reloadStateFromStorage);
     return () => unsubscribe();
-  }, [selectedProject]);
+  }, [reloadStateFromStorage]);
 
 
-  const initializeAi = (key, source) => {
+  const initializeAi = useCallback((key: string, source: string): boolean => {
     try {
       const genAI = new GoogleGenAI({ apiKey: key });
       setAi(genAI);
@@ -78,9 +86,33 @@ const App = () => {
       console.error(`Failed to initialize GoogleGenAI from ${source}:`, error);
       return false;
     }
-  };
+  }, []);
+
+  const initializeAwsBedrock = useCallback(async (): Promise<boolean> => {
+    try {
+      const testResponse = await fetch('http://localhost:3001/api/bedrock/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'test' })
+      });
+      
+      if (!testResponse.ok) {
+        console.info('AWS Bedrock backend returned error:', testResponse.status);
+        return false;
+      }
+      
+      const bedrockService = new AWSBedrockService();
+      setAi(bedrockService);
+      setApiKeyStatus('aws');
+      console.log('AWS Bedrock backend connected');
+      return true;
+    } catch (error: any) {
+      console.info('AWS backend not available:', error.message);
+      return false;
+    }
+  }, []);
   
-  const handleSetUserKey = (key) => {
+  const handleSetUserKey = useCallback((key: string | null) => {
     if (key === null) { 
         setAi(null);
         localStorage.removeItem('hmap-gemini-key');
@@ -93,7 +125,7 @@ const App = () => {
     } else {
         alert('The provided API Key appears to be invalid. Please check it and try again.');
     }
-  };
+  }, [initializeAi]);
 
   useEffect(() => {
     try {
@@ -112,17 +144,35 @@ const App = () => {
         setProjects([]);
     }
   
-    const userKey = localStorage.getItem('hmap-gemini-key');
-    if (userKey) {
-      if (initializeAi(userKey, 'user')) return;
-      else localStorage.removeItem('hmap-gemini-key');
-    }
-    
-    if (process.env.API_KEY) {
-      if (initializeAi(process.env.API_KEY, 'promo')) return;
-    }
-    
-    setApiKeyStatus('none');
+    (async () => {
+      let initialized = false;
+      
+      // Try AWS Bedrock first
+      try {
+        initialized = await initializeAwsBedrock();
+        if (initialized) return;
+      } catch (e) {
+        console.info('AWS Bedrock error:', e);
+      }
+
+      // Try user's Gemini key
+      const userKey = localStorage.getItem('hmap-gemini-key');
+      if (userKey) {
+        initialized = initializeAi(userKey, 'user');
+        if (initialized) return;
+        localStorage.removeItem('hmap-gemini-key');
+      }
+      
+      // Try environment Gemini key
+      const envGeminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (envGeminiKey) {
+        initialized = initializeAi(envGeminiKey, 'promo');
+        if (initialized) return;
+      }
+      
+      console.warn('No AI service initialized');
+      setApiKeyStatus('none');
+    })();
   }, []);
 
   useEffect(() => {
@@ -148,17 +198,21 @@ const App = () => {
     }
   }, [currentUser, projects]);
   
-  const saveProjectsToStorage = (updatedProjects) => {
+  const saveProjectsToStorage = useCallback((updatedProjects: Project[]) => {
     try {
       localStorage.setItem('hmap-projects', JSON.stringify(updatedProjects));
       notifyUpdate();
-// FIX: Corrected catch block variable name to resolve 'Cannot find name' error, which was likely a red herring from a larger structural issue.
-    } catch (e: any) {
-      console.error("Failed to save projects to localStorage:", e);
+    } catch (error: any) {
+      console.error("Failed to save projects to localStorage:", error);
+      alert('Failed to save project data. Please check your browser storage settings.');
     }
-  };
+  }, []);
 
-  const handleCreateProject = ({ name, template, mode, scope, teamSize, complexity }) => {
+  const handleCreateProject = useCallback(async ({ name, template, mode, scope, teamSize, complexity }: any) => {
+    if (userLimits.projectLimit !== -1 && userLimits.projectCount >= userLimits.projectLimit) {
+      setShowUpgradeModal(true);
+      return;
+    }
     const today = new Date();
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + 44);
@@ -223,9 +277,18 @@ const App = () => {
     handleSelectProject(newProject);
     handleModalOpen(false);
     logAction('Create Project', newProject.name, { newProject, allProjects: updatedProjects });
-  };
+    
+    try {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/user/${currentUser.id}/increment-projects`, {
+        method: 'POST'
+      });
+      setUserLimits(prev => ({ ...prev, projectCount: prev.projectCount + 1 }));
+    } catch (e) {
+      console.error('Failed to update project count:', e);
+    }
+  }, [projects, currentUser, saveProjectsToStorage, userLimits]);
   
-  const handleSaveProject = (updatedProject) => {
+  const handleSaveProject = useCallback((updatedProject: Project) => {
     const updatedProjects = projects.map(p => p.id === updatedProject.id ? updatedProject : p);
     setProjects(updatedProjects);
     saveProjectsToStorage(updatedProjects);
@@ -233,10 +296,12 @@ const App = () => {
         setSelectedProject(updatedProject);
     }
     logAction('Save Project', updatedProject.name, { updatedProject });
-  };
+  }, [projects, selectedProject, saveProjectsToStorage]);
   
-  const handleSelectProject = (project) => {
-    logAction('Select Project', project ? project.name : 'Home', { projectId: project ? project.id : null });
+  const handleSelectProject = useCallback((project: Project | null) => {
+    const projectName = project?.name || 'Home';
+    const projectId = project?.id || null;
+    logAction('Select Project', projectName, { projectId });
     setSelectedProject(project);
     if (project) {
         localStorage.setItem('hmap-selected-project-id', project.id);
@@ -251,40 +316,41 @@ const App = () => {
     } else {
         localStorage.removeItem('hmap-selected-project-id');
     }
-  };
+  }, [recentlyViewedIds]);
 
-  const handleSelectTask = (project: Project, task: Task) => {
+  const handleSelectTask = useCallback((project: Project, task: Task) => {
     logAction('Select Task from My Work', task.name, { projectId: project.id, taskId: task.id });
     handleSelectProject(project);
     sessionStorage.setItem('hmap-open-task-on-load', task.id);
-  };
+  }, [handleSelectProject]);
 
-  const handleModalOpen = (isOpen) => {
+  const handleModalOpen = useCallback((isOpen: boolean) => {
     logAction('Toggle New Project Modal', 'Modal', { isOpen });
     setIsModalOpen(isOpen);
-  };
+  }, []);
 
-  const cleanupProjectData = (projectId) => {
+  const cleanupProjectData = useCallback((projectId: string) => {
     localStorage.removeItem('hmap-selected-project-id');
     localStorage.removeItem(`hmap-active-tab-${projectId}`);
     localStorage.removeItem(`hmap-open-phases-${projectId}`);
     localStorage.removeItem(`hmap-tracking-view-${projectId}`);
     logAction('Cleanup Project Data', 'localStorage', { projectId });
-  };
+  }, []);
 
-  const handleNewProjectRequest = () => {
+  const handleNewProjectRequest = useCallback(() => {
     logAction('Open Project Manager', 'User Action', {});
     handleModalOpen(true);
-  };
+  }, [handleModalOpen]);
 
-  const handleRequestDeleteProject = (project) => {
+  const handleRequestDeleteProject = useCallback((project: Project) => {
+    if (!project) return;
     logAction('Request Project Deletion', project.name, { projectId: project.id });
     setProjectToDelete(project);
     setIsDeleteConfirmationOpen(true);
     handleModalOpen(false);
-  };
+  }, [handleModalOpen]);
 
-  const handleConfirmDeletion = () => {
+  const handleConfirmDeletion = useCallback(async () => {
     if (!projectToDelete) return;
     logAction('Confirm Delete Project', projectToDelete.name, { projectId: projectToDelete.id });
     const updatedProjects = projects.filter(p => p.id !== projectToDelete.id);
@@ -299,18 +365,27 @@ const App = () => {
     }
     setProjectToDelete(null);
     setIsDeleteConfirmationOpen(false);
-  };
+    
+    try {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/user/${currentUser.id}/decrement-projects`, {
+        method: 'POST'
+      });
+      setUserLimits(prev => ({ ...prev, projectCount: Math.max(0, prev.projectCount - 1) }));
+    } catch (e) {
+      console.error('Failed to update project count:', e);
+    }
+  }, [projectToDelete, projects, recentlyViewedIds, selectedProject, saveProjectsToStorage, cleanupProjectData, currentUser]);
 
-  const handleToggleHelpModal = (isOpen: boolean) => {
+  const handleToggleHelpModal = useCallback((isOpen: boolean) => {
       logAction('Toggle Help Modal', 'UI Action', { isOpen });
       setIsHelpModalOpen(isOpen);
-  };
+  }, []);
 
   // FIX: Add notification handlers to pass to Header component.
-  const handleNotificationClick = (notification: Notification) => {
-    if (!selectedProject) return;
+  const handleNotificationClick = useCallback((notification: Notification) => {
+    if (!selectedProject || !notification) return;
 
-    logAction('Click Notification', notification.text, { notificationId: notification.id });
+    logAction('Click Notification', 'Notification', { notificationId: notification.id });
     
     const updatedNotifications = selectedProject.notifications.map(n => 
         n.id === notification.id ? { ...n, read: true } : n
@@ -324,9 +399,9 @@ const App = () => {
         sessionStorage.setItem('hmap-open-task-on-load', notification.taskId);
         setAppKey(prev => prev + 1);
     }
-  };
+  }, [selectedProject, handleSaveProject]);
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = useCallback(() => {
     if (!selectedProject) return;
     
     logAction('Mark All Notifications Read', 'User Action', { projectId: selectedProject.id });
@@ -334,14 +409,23 @@ const App = () => {
     const updatedNotifications = selectedProject.notifications.map(n => ({ ...n, read: true }));
     const updatedProject = { ...selectedProject, notifications: updatedNotifications };
     handleSaveProject(updatedProject);
-  };
+  }, [selectedProject, handleSaveProject]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     authService.logout();
     setCurrentUser(null);
     setSelectedProject(null);
     localStorage.removeItem('hmap-selected-project-id');
-  };
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/user/${currentUser.id}/limits`)
+        .then(res => res.json())
+        .then(data => setUserLimits(data))
+        .catch(e => console.error('Failed to fetch user limits:', e));
+    }
+  }, [currentUser]);
 
   return (
     <>
@@ -409,6 +493,13 @@ const App = () => {
                       projectName={projectToDelete.name}
                   />
                 )}
+                
+                <UpgradeModal 
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    currentCount={userLimits.projectCount}
+                    limit={userLimits.projectLimit}
+                />
             </>
         )}
         

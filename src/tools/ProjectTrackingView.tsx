@@ -5,6 +5,9 @@ import { TeamAssignmentsView } from './TeamView';
 import { Project, Task, User, Milestone, Sprint } from '../types';
 import { WorkloadView } from './WorkloadView';
 import { parseResourcesFromMarkdown, parseRolesFromMarkdown } from '../utils/be-logic';
+import { runAgenticWorkflow } from '../utils/agenticWorkflow';
+import type { GoogleGenAI } from '@google/genai';
+import type { AWSBedrockService } from '../utils/awsBedrockService';
 
 const ResourcesView = ({ project, onUpdateProject }) => {
     const [resources, setResources] = useState(project.resources || []);
@@ -75,28 +78,52 @@ const ResourcesView = ({ project, onUpdateProject }) => {
 };
 
 
-const TaskListView = ({ tasks, team, onTaskClick }) => {
+const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) => {
     if (!tasks || tasks.length === 0) return <p>Tasks will be populated here once planning is complete.</p>;
+    
+    const canUseAgent = (task: Task) => {
+        if (!task.dependsOn || task.dependsOn.length === 0) return true;
+        return task.dependsOn.every(depId => {
+            const depTask = tasks.find(t => t.id === depId);
+            return depTask?.status === 'done';
+        });
+    };
     
     return (
         <table className="task-list-table">
             <thead>
-                <tr><th>Task Name</th><th>Assigned To</th><th>Status</th><th>Due Date</th></tr>
+                <tr><th>Task Name</th><th>Assigned To</th><th>Status</th><th>Due Date</th><th>Use Agent</th></tr>
             </thead>
             <tbody>
                 {tasks.map(task => {
                     const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
+                    const agentEnabled = canUseAgent(task);
                     return (
-                        <tr key={task.id} onClick={() => onTaskClick(task)} className={isOverdue ? 'task-row-overdue' : ''}>
-                            <td>
+                        <tr key={task.id} className={isOverdue ? 'task-row-overdue' : ''}>
+                            <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>
                                 {task.name}
                                 {task.recurrence?.interval && task.recurrence.interval !== 'none' && (
                                     <span title={`Recurs ${task.recurrence.interval}`} style={{ marginLeft: '8px', cursor: 'default' }}>🔄</span>
                                 )}
                             </td>
-                            <td>{team.find(member => member.role === task.role)?.name || 'Unassigned'}</td>
-                            <td>{task.status}</td>
-                            <td>{task.endDate}</td>
+                            <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{team.find(member => member.role === task.role)?.name || 'Unassigned'}</td>
+                            <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{task.status}</td>
+                            <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{task.endDate}</td>
+                            <td>
+                                <input 
+                                    type="checkbox" 
+                                    checked={task.useAgent || false}
+                                    disabled={!agentEnabled || task.agentStatus === 'running'}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        onToggleAgent(task.id, e.target.checked);
+                                    }}
+                                    title={!agentEnabled ? 'Complete dependencies first' : task.agentStatus === 'running' ? 'Agent is running' : 'Use AI agent to complete this task'}
+                                />
+                                {task.agentStatus === 'running' && <span style={{ marginLeft: '4px' }}>⏳</span>}
+                                {task.agentStatus === 'completed' && <span style={{ marginLeft: '4px' }}>✅</span>}
+                                {task.agentStatus === 'failed' && <span style={{ marginLeft: '4px' }}>❌</span>}
+                            </td>
                         </tr>
                     );
                 })}
@@ -124,10 +151,20 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, sprints, projectStartDat
     const containerRef = useRef<HTMLDivElement>(null);
     const taskBarRefs = useRef(new Map());
     const [dependencyLines, setDependencyLines] = useState<DependencyLine[]>([]);
-    const diffInDays = (d1, d2) => Math.round((new Date(d2).getTime() - new Date(d1).getTime()) / (1000 * 3600 * 24));
+    const diffInDays = (d1, d2) => {
+        const date1 = new Date(d1);
+        const date2 = new Date(d2);
+        date1.setHours(0, 0, 0, 0);
+        date2.setHours(0, 0, 0, 0);
+        return Math.round((date2.getTime() - date1.getTime()) / (1000 * 3600 * 24));
+    };
     
     const totalDays = Math.max(1, diffInDays(projectStartDate, projectEndDate) + 1);
-    const dateArray = Array.from({ length: totalDays }, (_, i) => new Date(new Date(projectStartDate).setDate(new Date(projectStartDate).getDate() + i)));
+    const dateArray = Array.from({ length: totalDays }, (_, i) => {
+        const date = new Date(projectStartDate);
+        date.setDate(date.getDate() + i);
+        return date;
+    });
     
     const tasksWithRowIndex = useMemo(() => {
         let taskIndexCounter = 0;
@@ -177,58 +214,69 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks, sprints, projectStartDat
     }, [tasksWithRowIndex, projectStartDate, projectEndDate, tasks]);
 
     return (
-        <div className="gantt-container" ref={containerRef}>
-            <div className="gantt-grid" style={{ gridTemplateColumns: `repeat(${totalDays}, minmax(40px, 1fr))`, gridAutoRows: '30px', gap: '5px 0' }}>
-                 {dateArray.map(date => (
-                    <div key={date.toISOString()} className="gantt-date" style={{ gridRow: 1 }}>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                ))}
-                
-                {tasksWithRowIndex.flatMap(({ sprint, tasks: sprintTasks }, sprintIndex) => [
-                    <div key={sprint.id} className="gantt-sprint-label" style={{ gridColumn: `1 / span ${totalDays}`, gridRow: (sprintTasks[0]?.rowIndex ?? 0) + 2, background: 'none', fontWeight: 'normal', color: 'var(--secondary-text)' }}>{sprint.name}</div>,
-                    ...sprintTasks.map((task: Task & { rowIndex: number }) => {
-                         const startOffset = diffInDays(projectStartDate, task.startDate);
-                         const duration = diffInDays(task.startDate, task.endDate) + 1;
-                         const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
-                         const isBlocked = task.dependsOn?.some(depId => tasks.find(t => t.id === depId)?.status !== 'done');
-                         
-                         if (startOffset < 0 || startOffset >= totalDays) return null;
-
-                         return (
-                             <div
-                                 key={task.id}
-                                 // FIX: Use a callback ref that handles element mounting and unmounting to avoid returning a value from the ref function, which is not allowed.
-                                 ref={el => {
-                                     if (el) {
-                                         taskBarRefs.current.set(task.id, el);
-                                     } else {
-                                         taskBarRefs.current.delete(task.id);
-                                     }
-                                 }}
-                                 className={`gantt-task-bar task-bar-${task.status} ${isOverdue ? 'overdue' : ''} ${isBlocked ? 'blocked' : ''} ${task.isSubcontracted ? 'subcontracted' : ''}`}
-                                 style={{
-                                     gridRow: task.rowIndex + 2,
-                                     gridColumn: `${startOffset + 1} / span ${Math.max(1, duration)}`,
-                                 }}
-                                 onClick={() => onTaskClick(task)}
-                                 title={`${task.name} (${task.status})`}
-                             >
-                                 {task.name}
-                                 {task.recurrence?.interval && task.recurrence.interval !== 'none' && (
-                                     <span title={`Recurs ${task.recurrence.interval}`} style={{ marginLeft: '8px', cursor: 'default' }}>🔄</span>
-                                 )}
-                             </div>
-                         );
-                    })
+        <div className="gantt-wrapper" ref={containerRef}>
+            <div className="gantt-left-panel">
+                <div className="gantt-task-header">Task Name</div>
+                {tasksWithRowIndex.flatMap(({ sprint, tasks: sprintTasks }) => [
+                    <div key={`sprint-${sprint.id}`} className="gantt-sprint-name">{sprint.name}</div>,
+                    ...sprintTasks.map((task: Task & { rowIndex: number }) => (
+                        <div key={`name-${task.id}`} className="gantt-task-name" title={task.name}>
+                            {task.name}
+                        </div>
+                    ))
                 ])}
             </div>
-             <svg className="gantt-dependency-svg" style={{ height: (totalRows + 1) * 35 }}>
-                {dependencyLines.map(line => (
-                    <g key={line.id}>
-                        <path d={line.path} className="gantt-dependency-line" />
-                        <path d={line.arrow} className="gantt-dependency-arrow" />
-                    </g>
-                ))}
-            </svg>
+            <div className="gantt-right-panel">
+                <div className="gantt-timeline-header">
+                    {dateArray.map(date => (
+                        <div key={date.toISOString()} className="gantt-date-cell">
+                            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                    ))}
+                </div>
+                <div className="gantt-chart-body">
+                    {tasksWithRowIndex.flatMap(({ sprint, tasks: sprintTasks }) => [
+                        <div key={`sprint-row-${sprint.id}`} className="gantt-sprint-row" />,
+                        ...sprintTasks.map((task: Task & { rowIndex: number }) => {
+                            const startOffset = diffInDays(projectStartDate, task.startDate);
+                            const duration = diffInDays(task.startDate, task.endDate) + 1;
+                            const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
+                            const isBlocked = task.dependsOn?.some(depId => tasks.find(t => t.id === depId)?.status !== 'done');
+                            
+                            return (
+                                <div key={`row-${task.id}`} className="gantt-task-row">
+                                    {dateArray.map((_, dayIndex) => (
+                                        <div key={dayIndex} className="gantt-day-cell" />
+                                    ))}
+                                    {startOffset >= 0 && startOffset < totalDays && (
+                                        <div
+                                            ref={el => {
+                                                if (el) {
+                                                    taskBarRefs.current.set(task.id, el);
+                                                } else {
+                                                    taskBarRefs.current.delete(task.id);
+                                                }
+                                            }}
+                                            className={`gantt-bar task-bar-${task.status} ${isOverdue ? 'overdue' : ''} ${isBlocked ? 'blocked' : ''} ${task.isSubcontracted ? 'subcontracted' : ''}`}
+                                            style={{
+                                                left: `${startOffset * 50}px`,
+                                                width: `${Math.max(1, duration) * 50}px`,
+                                            }}
+                                            onClick={() => onTaskClick(task)}
+                                            title={`${task.name} (${task.status})`}
+                                        >
+                                            <span className="gantt-bar-text">{task.name}</span>
+                                            {task.recurrence?.interval && task.recurrence.interval !== 'none' && (
+                                                <span title={`Recurs ${task.recurrence.interval}`}>🔄</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ])}
+                </div>
+            </div>
         </div>
     );
 };
@@ -253,7 +301,7 @@ const KanbanBoard = ({ tasks, onUpdateTask, onTaskClick }) => {
                         return (
                              <div key={task.id} className={`kanban-card ${status} ${isOverdue ? 'overdue' : ''}`} onClick={() => onTaskClick(task)}>
                                 {task.isSubcontracted && <span className="subcontractor-label">Sub</span>}
-                                <p>{task.name}</p>
+                                <p><span>{task.name}</span></p>
                                 <select 
                                     value={task.status} 
                                     onChange={(e) => handleStatusChange(e, task, status)} 
@@ -274,6 +322,18 @@ const KanbanBoard = ({ tasks, onUpdateTask, onTaskClick }) => {
 const MilestonesView = ({ milestones, tasks, onUpdateMilestone }) => {
     if (!milestones || milestones.length === 0) return <p>Milestones will be populated here once planning is complete.</p>;
 
+    const getMilestoneActualDate = (milestone) => {
+        const relevantTasks = tasks.filter(t => new Date(t.endDate) <= new Date(milestone.plannedDate));
+        if (relevantTasks.length === 0) return null;
+        const allDone = relevantTasks.every(t => t.status === 'done');
+        if (!allDone) return null;
+        const latestEndDate = relevantTasks.reduce((latest, t) => {
+            const taskEnd = new Date(t.actualEndDate || t.endDate);
+            return taskEnd > latest ? taskEnd : latest;
+        }, new Date(0));
+        return latestEndDate.toISOString().split('T')[0];
+    };
+
     const getMilestoneHealth = (milestone) => {
         const relevantTasks = tasks.filter(t => new Date(t.endDate) <= new Date(milestone.plannedDate));
         if (relevantTasks.length === 0) return { status: 'On Track', color: 'var(--status-green)' };
@@ -291,6 +351,9 @@ const MilestonesView = ({ milestones, tasks, onUpdateMilestone }) => {
             <tbody>
                 {milestones.map(m => {
                     const health = getMilestoneHealth(m);
+                    const calculatedActualDate = getMilestoneActualDate(m);
+                    const displayActualDate = m.actualDate || calculatedActualDate || '';
+                    const isAutoCalculated = !m.actualDate && calculatedActualDate;
                     return (
                         <tr key={m.id}>
                             <td>{m.name}</td>
@@ -298,12 +361,14 @@ const MilestonesView = ({ milestones, tasks, onUpdateMilestone }) => {
                             <td>
                                 <input 
                                     type="date" 
-                                    value={m.actualDate || ''} 
+                                    value={displayActualDate} 
                                     onChange={e => onUpdateMilestone(m.id, { actualDate: e.target.value, status: e.target.value ? 'Completed' : 'Planned' })} 
+                                    style={{ backgroundColor: isAutoCalculated ? 'var(--background-secondary)' : 'transparent' }}
+                                    title={isAutoCalculated ? 'Auto-calculated from task completion dates' : ''}
                                 />
                             </td>
                             <td>
-                                <select value={m.status || 'Planned'} onChange={e => onUpdateMilestone(m.id, { status: e.target.value })}>
+                                <select value={calculatedActualDate ? 'Completed' : (m.status || 'Planned')} onChange={e => onUpdateMilestone(m.id, { status: e.target.value })}>
                                     <option>Planned</option>
                                     <option>Completed</option>
                                 </select>
@@ -481,11 +546,13 @@ interface ProjectTrackingViewProps {
     onUpdateProject: (update: Partial<Project>) => void;
     onTaskClick: (task: Task) => void;
     currentUser: User;
+    ai: GoogleGenAI | AWSBedrockService;
 }
 
-export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ project, onUpdateTask, onUpdateMilestone, onUpdateTeam, onUpdateProject, onTaskClick, currentUser }) => {
+export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ project, onUpdateTask, onUpdateMilestone, onUpdateTeam, onUpdateProject, onTaskClick, currentUser, ai }) => {
     const [trackingView, setTrackingView] = useState('Timeline');
     const [snapshotStatus, setSnapshotStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const [agentProgress, setAgentProgress] = useState<{ agent: string; iteration: number; preview: string } | null>(null);
 
     useEffect(() => {
         const savedView = localStorage.getItem(`hmap-tracking-view-${project.id}`);
@@ -575,9 +642,72 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
         }
     };
 
+    const handleToggleAgent = async (taskId: string, enabled: boolean) => {
+        const task = project.tasks.find(t => t.id === taskId);
+        if (!task) return;
+        
+        if (enabled) {
+            // Update task to show agent is running
+            onUpdateProject({
+                tasks: project.tasks.map(t => 
+                    t.id === taskId ? { ...t, useAgent: true, agentStatus: 'running' as const } : t
+                )
+            });
+            
+            setAgentProgress({ agent: 'System', iteration: 0, preview: 'Starting agent workflow...' });
+            
+            const result = await runAgenticWorkflow(
+                ai,
+                task,
+                project,
+                (message) => setAgentProgress(message),
+                (title, content) => {
+                    // Add document to project
+                    const newDocId = `doc-agent-${Date.now()}`;
+                    const newDoc = {
+                        id: newDocId,
+                        title,
+                        version: 'v1.0',
+                        status: 'Working',
+                        owner: currentUser.username,
+                        phase: 8,
+                        sequence: 999
+                    };
+                    
+                    onUpdateProject({
+                        documents: [...project.documents, newDoc],
+                        phasesData: {
+                            ...project.phasesData,
+                            [newDocId]: { content, attachments: [] }
+                        }
+                    });
+                }
+            );
+            
+            if (result.success) {
+                onUpdateTask(taskId, { agentStatus: 'completed', status: 'done' }, task.status);
+                setAgentProgress(null);
+            } else {
+                onUpdateProject({
+                    tasks: project.tasks.map(t => 
+                        t.id === taskId ? { ...t, agentStatus: 'failed' as const } : t
+                    )
+                });
+                setAgentProgress(null);
+                alert(result.error || 'Agent workflow failed');
+            }
+        } else {
+            onUpdateProject({
+                tasks: project.tasks.map(t => 
+                    t.id === taskId ? { ...t, useAgent: false, agentStatus: 'idle' as const } : t
+                )
+            });
+        }
+    };
+
     const views = {
         'Timeline': <GanttChart tasks={project.tasks} sprints={project.sprints} projectStartDate={project.startDate} projectEndDate={project.endDate} onTaskClick={onTaskClick} />,
-        'Task List': <TaskListView tasks={project.tasks} team={project.team} onTaskClick={onTaskClick} />,
+        'Task List': <TaskListView tasks={project.tasks} team={project.team} onTaskClick={onTaskClick} onToggleAgent={handleToggleAgent} project={project} ai={ai} />,
         'Kanban Board': <KanbanBoard tasks={project.tasks} onUpdateTask={onUpdateTask} onTaskClick={onTaskClick} />,
         'Workload': <WorkloadView project={project} />,
         'Milestones': <MilestonesView milestones={project.milestones} tasks={project.tasks} onUpdateMilestone={onUpdateMilestone} />,
@@ -587,6 +717,20 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
 
     return (
         <div className="tool-card">
+            {trackingView === 'Task List' && (
+                <div style={{ padding: '1rem', backgroundColor: 'var(--background-secondary)', borderRadius: '4px', marginBottom: '1rem', border: '1px solid var(--border-color)' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--secondary-text)' }}>
+                        ⚠️ <strong>Caution:</strong> Using agents to perform tasks will take time. Be sure you want this before checking the "Use Agent" box.
+                    </p>
+                </div>
+            )}
+            {agentProgress && (
+                <div className="status-message loading" style={{ marginBottom: '1rem' }}>
+                    <div className="spinner"></div>
+                    <p><strong>{agentProgress.agent}</strong> - Iteration {agentProgress.iteration}</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary-text)', marginTop: '0.25rem' }}>{agentProgress.preview}...</p>
+                </div>
+            )}
             <div className="tracking-view-header">
                 <div className="tracking-view-tabs">
                     {viewOrder.map(viewName => (

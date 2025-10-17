@@ -6,6 +6,7 @@ import { logAction } from '../utils/logging';
 import { PROMPTS } from '../constants/projectData';
 import { ChangeDeploymentModal } from '../components/ChangeDeploymentModal';
 import { parseImpact, applyImpact } from '../utils/be-logic';
+import { runRevisionAgenticWorkflow } from '../utils/revisionAgenticWorkflow';
 
 // Safety limits for API payload
 const MAX_PAYLOAD_CHARS = 20000; // Drastically reduced to prevent potential 500 errors from large requests.
@@ -29,6 +30,8 @@ export const RevisionControlView = ({ project, onUpdateProject, ai }: {project: 
     const [isDeploying, setIsDeploying] = useState(false);
     const [isEstimating, setIsEstimating] = useState(false);
     const [error, setError] = useState('');
+    const [isRunningAgentWorkflow, setIsRunningAgentWorkflow] = useState(false);
+    const [agentProgress, setAgentProgress] = useState<{ agent: string; iteration: number; preview: string } | null>(null);
 
     const handleCrChange = (newCrData) => {
         onUpdateProject({ changeRequest: newCrData });
@@ -130,6 +133,58 @@ export const RevisionControlView = ({ project, onUpdateProject, ai }: {project: 
         const className = diff > 0 ? 'impact-positive' : diff < 0 ? 'impact-negative' : '';
         const sign = diff > 0 ? '+' : '';
         return <>{currencyFormat(value)} {diff !== 0 && <span className={className}>({sign}{currencyFormat(diff)})</span>}</>
+    };
+
+    const handleRunAgentWorkflow = async () => {
+        if (!cr.title || !cr.reason) {
+            alert('Please provide a title and reason for the change request.');
+            return;
+        }
+        
+        setIsRunningAgentWorkflow(true);
+        setError('');
+        setAgentProgress(null);
+        
+        try {
+            const result = await runRevisionAgenticWorkflow(
+                ai,
+                cr,
+                project,
+                (message) => setAgentProgress(message),
+                (docId, newContent, newCompactedContent) => {
+                    // Update document content
+                    onUpdateProject({
+                        phasesData: {
+                            ...project.phasesData,
+                            [docId]: {
+                                ...project.phasesData[docId],
+                                content: newContent,
+                                compactedContent: newCompactedContent
+                            }
+                        }
+                    });
+                },
+                (docId) => {
+                    // Reset document status to Working
+                    const updatedDocs = project.documents.map(d => 
+                        d.id === docId ? { ...d, status: 'Working' } : d
+                    );
+                    onUpdateProject({ documents: updatedDocs });
+                }
+            );
+            
+            if (result.success) {
+                alert('Agentic revision workflow completed successfully. Documents have been updated.');
+                setAgentProgress(null);
+            } else {
+                setError(result.error || 'Workflow failed');
+            }
+        } catch (err) {
+            console.error('Agent workflow error:', err);
+            setError(`Workflow error: ${err}`);
+        } finally {
+            setIsRunningAgentWorkflow(false);
+        }
     };
 
     const handleSaveChange = () => {
@@ -247,13 +302,34 @@ ${cr.reason}
                     />
                 </div>
                 {error && <p className="status-message error">{error}</p>}
-                <div style={{display: 'flex', gap: '1rem'}}>
-                    <button className="button" onClick={handleGeneratePlan} disabled={isGeneratingPlan || !ai}>
-                        {isGeneratingPlan ? 'Generating...' : (deploymentPlan ? 'Regenerate Plan' : 'Generate Deployment Plan')}
-                    </button>
-                    <button className="button button-primary" onClick={() => setIsDeploying(true)} disabled={!deploymentPlan || isGeneratingPlan}>
-                        Deploy Change...
-                    </button>
+                <div style={{display: 'flex', gap: '1rem', flexDirection: 'column'}}>
+                    <div style={{display: 'flex', gap: '1rem'}}>
+                        <button className="button" onClick={handleGeneratePlan} disabled={isGeneratingPlan || !ai}>
+                            {isGeneratingPlan ? 'Generating...' : (deploymentPlan ? 'Regenerate Plan' : 'Generate Deployment Plan')}
+                        </button>
+                        <button className="button button-primary" onClick={() => setIsDeploying(true)} disabled={!deploymentPlan || isGeneratingPlan}>
+                            Deploy Change...
+                        </button>
+                    </div>
+                    <div style={{borderTop: '1px solid var(--border-color)', paddingTop: '1rem'}}>
+                        <button 
+                            className="button button-primary" 
+                            onClick={handleRunAgentWorkflow} 
+                            disabled={isRunningAgentWorkflow || !cr.title || !cr.reason}
+                            style={{width: '100%'}}
+                        >
+                            {isRunningAgentWorkflow ? 'Agent Workflow Running...' : 'Run Agentic Revision Workflow'}
+                        </button>
+                        <p style={{fontSize: '0.85rem', color: 'var(--secondary-text)', marginTop: '0.5rem', fontStyle: 'italic'}}>
+                            Note: This will review every document and the current project state. This process will take significant time.
+                        </p>
+                        {agentProgress && (
+                            <div className="status-message loading" style={{marginTop: '1rem'}}>
+                                <p><strong>{agentProgress.agent}</strong> - Iteration {agentProgress.iteration}</p>
+                                <p style={{fontSize: '0.9rem', color: 'var(--secondary-text)'}}>{agentProgress.preview}...</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

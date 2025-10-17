@@ -57,53 +57,60 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
 
     const projectWeeks = getProjectWeeks(startDate, endDate);
     
-    const workloadData = extractedRoles.map(role => {
-        const member = team.find(m => m.role === role);
-        const roleTasks = tasks.filter(task => task.role === role);
-        
-        const weeklyWorkload = projectWeeks.map(weekStart => {
-            const weekEnd = new Date(weekStart);
-            weekEnd.setDate(weekEnd.getDate() + 6);
+    const workloadData = useMemo(() => {
+        return extractedRoles.map(role => {
+            const member = team.find(m => m.role === role);
+            const roleTasks = tasks.filter(task => task.role === role);
             
-            let totalDaysInWeek = 0;
-            const tasksInWeek = [];
-            
-            roleTasks.forEach(task => {
-                const taskStart = new Date(task.startDate);
-                const taskEnd = new Date(task.endDate);
-                taskStart.setHours(0, 0, 0, 0);
-                taskEnd.setHours(0, 0, 0, 0);
+            const weeklyWorkload = projectWeeks.map(weekStart => {
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+                
+                let totalDaysInWeek = 0;
+                const tasksInWeek = [];
+                
+                roleTasks.forEach(task => {
+                    const taskStart = new Date(task.startDate);
+                    const taskEnd = new Date(task.endDate);
+                    taskStart.setHours(0, 0, 0, 0);
+                    taskEnd.setHours(23, 59, 59, 999);
 
-                // Check for overlap between task and week
-                if (taskStart <= weekEnd && taskEnd >= weekStart) {
-                    tasksInWeek.push(task);
-                    
-                    // Calculate workdays of this task within this week, excluding weekends
-                    const overlapStart = new Date(Math.max(taskStart.getTime(), weekStart.getTime()));
-                    const overlapEnd = new Date(Math.min(taskEnd.getTime(), weekEnd.getTime()));
-                    
-                    let workDays = 0;
-                    let currentDay = new Date(overlapStart);
-                    while (currentDay <= overlapEnd) {
-                        const dayOfWeek = currentDay.getDay(); // 0 = Sunday, 6 = Saturday
-                        if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday to Friday
-                            workDays++;
+                    // Check for overlap between task and week
+                    if (taskStart <= weekEnd && taskEnd >= weekStart) {
+                        tasksInWeek.push(task);
+                        
+                        // Calculate workdays of this task within this week, excluding weekends
+                        const overlapStart = new Date(Math.max(taskStart.getTime(), weekStart.getTime()));
+                        const overlapEnd = new Date(Math.min(taskEnd.getTime(), weekEnd.getTime()));
+                        
+                        let workDays = 0;
+                        let currentDay = new Date(overlapStart);
+                        currentDay.setHours(0, 0, 0, 0);
+                        const endDay = new Date(overlapEnd);
+                        endDay.setHours(0, 0, 0, 0);
+                        
+                        while (currentDay <= endDay) {
+                            const dayOfWeek = currentDay.getDay();
+                            if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                workDays++;
+                            }
+                            currentDay.setDate(currentDay.getDate() + 1);
                         }
-                        currentDay.setDate(currentDay.getDate() + 1);
+                        totalDaysInWeek += workDays;
                     }
-                    totalDaysInWeek += workDays;
-                }
+                });
+                
+                return { tasks: tasksInWeek, totalDays: totalDaysInWeek };
             });
             
-            return { tasks: tasksInWeek, totalDays: totalDaysInWeek };
+            return {
+                role,
+                member,
+                weeklyWorkload,
+            };
         });
-        
-        return {
-            role,
-            member,
-            weeklyWorkload,
-        };
-    });
+    }, [extractedRoles, team, tasks, projectWeeks]);
 
     return (
         <div style={{ overflowX: 'auto' }}>

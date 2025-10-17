@@ -21,17 +21,25 @@ export const parseMarkdown = (markdownText: string): React.ReactNode[] => {
         }
     };
 
-    const parseLineToHtml = (line: string) => {
-        // Basic escaping to prevent raw HTML injection
-        line = line
+    const escapeHtml = (text: string) => {
+        return text
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
+    const parseLineToHtml = (line: string) => {
+        line = escapeHtml(line);
         
-        // Markdown conversions
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
-        line = line.replace(/`([^`]+)`/g, '<code>$1</code>'); // Inline code
-        line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'); // Links
+        // Markdown conversions on escaped content
+        line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        line = line.replace(/`([^`]+)`/g, '<code>$1</code>');
+        line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+            const safeUrl = /^https?:\/\//.test(url) ? escapeHtml(url) : '#';
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        });
         return { __html: line };
     };
 

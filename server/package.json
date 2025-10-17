@@ -1,0 +1,16 @@
+{
+  "name": "project-management-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.709.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "stripe": "^17.5.0"
+  }
+}

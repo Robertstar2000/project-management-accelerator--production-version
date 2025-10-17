@@ -49,12 +49,20 @@ export const DashboardView = ({
     const riskExposureClass = riskExposure === 'High' ? 'red' : riskExposure === 'Medium' ? 'amber' : 'green';
 
     // Phase & Milestone Tracking
-    const completedPhases = Object.values(phasesData).filter((p: any) => p.status === 'completed').length;
+    const completedPhases = documents.filter(d => d.status === 'Approved').length;
+    const totalPhases = documents.length;
     const inProgressPhase = projectPhases.find((p, i) => {
-        const isComplete = phasesData[p.id]?.status === 'completed';
-        const isPrevComplete = i === 0 || phasesData[projectPhases[i - 1].id]?.status === 'completed';
+        const doc = documents.find(d => d.id === p.docId);
+        const isComplete = doc?.status === 'Approved';
+        const prevDoc = i > 0 ? documents.find(d => d.id === projectPhases[i - 1].docId) : null;
+        const isPrevComplete = i === 0 || prevDoc?.status === 'Approved';
         return !isComplete && isPrevComplete;
     });
+    
+    // Task Completion Tracking
+    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    const totalTasks = tasks.length;
+    const taskCompletionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     const nextMilestone = milestones
         .filter(m => m.status !== 'Completed')
         .sort((a, b) => new Date(a.plannedDate).getTime() - new Date(b.plannedDate).getTime())[0];
@@ -103,27 +111,44 @@ export const DashboardView = ({
                 <div className="tool-card">
                     <h3 className="subsection-title">Phase Tracker</h3>
                     <div className="phase-tracker">
-                        {projectPhases.map((phase, i) => (
-                            <div
-                                key={phase.id}
-                                className={`phase-tracker-segment ${phasesData[phase.id]?.status === 'completed' ? 'completed' : phase.id === inProgressPhase?.id ? 'inprogress' : ''}`}
-                                title={phase.title}
-                            />
-                        ))}
+                        {projectPhases.map((phase) => {
+                            const doc = documents.find(d => d.id === phase.docId);
+                            const isComplete = doc?.status === 'Approved';
+                            const isInProgress = phase.id === inProgressPhase?.id;
+                            return (
+                                <div
+                                    key={phase.id}
+                                    className={`phase-tracker-segment ${isComplete ? 'completed' : isInProgress ? 'inprogress' : ''}`}
+                                    title={phase.title}
+                                />
+                            );
+                        })}
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--secondary-text)', marginTop: '0.5rem' }}>
+                        {completedPhases} of {totalPhases} documents approved
+                    </p>
+                </div>
+                <div className="tool-card">
+                    <h3 className="subsection-title">Task Completion</h3>
+                    <div style={{ width: '100%', height: '30px', backgroundColor: 'var(--background-secondary)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                        <div style={{ width: `${taskCompletionPercent}%`, height: '100%', backgroundColor: 'var(--accent-color)', transition: 'width 0.3s ease' }} />
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontWeight: 'bold', color: taskCompletionPercent > 50 ? 'var(--background-color)' : 'var(--text-color)' }}>
+                            {completedTasks} / {totalTasks} ({taskCompletionPercent}%)
+                        </div>
                     </div>
                 </div>
                 <div className="tool-card">
-                    <h3 className="subsection-title">Workstreams</h3>
-                    {project.sprints?.map(sprint => (
-                        <div className="swimlane" key={sprint.id}>
-                            <h4>{sprint.name}</h4>
-                            <div className="swimlane-content">
-                                {project.tasks?.filter(t => t.sprintId === sprint.id).map(task => (
-                                    <div className="task-card" key={task.id}>{task.name}</div>
-                                ))}
+                    <h3 className="subsection-title">Tasks</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '400px', overflowY: 'auto' }}>
+                        {project.tasks?.map(task => (
+                            <div className="task-card" key={task.id} style={{ padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
+                                <div style={{ fontWeight: 'bold' }}>{task.name}</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--secondary-text)' }}>
+                                    {task.status} • Due: {task.endDate}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
             <div className="tool-grid">

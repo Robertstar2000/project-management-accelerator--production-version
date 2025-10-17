@@ -54,31 +54,38 @@ export const PhaseCard: React.FC<PhaseCardProps> = ({ phase, project, phaseData,
 
     const handleDescriptionFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file && file.type === 'text/plain') {
+        if (file && file.type === 'text/plain' && file.size < 5000000) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const text = e.target?.result as string;
                 updatePhaseData(phase.id, text);
             };
+            reader.onerror = () => {
+                alert('Error reading file.');
+            };
             reader.readAsText(file);
         } else if (file) {
-            alert('Please select a .txt file.');
+            alert('Please select a valid .txt file under 5MB.');
         }
-        // Reset file input to allow uploading the same file again
         if (event.target) event.target.value = '';
     };
 
     const handleAttachmentFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
+        if (file && file.size < 10000000) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const data = e.target?.result as string;
                 onAttachFile(phase.id, { name: file.name, data });
             };
+            reader.onerror = () => {
+                alert('Error reading file.');
+            };
             reader.readAsDataURL(file);
+        } else if (file) {
+            alert('File size must be under 10MB.');
         }
-        if (event.target) event.target.value = ''; // Reset input
+        if (event.target) event.target.value = '';
     };
 
     const placeholderText = phase.originalPhaseId === 'phase1'

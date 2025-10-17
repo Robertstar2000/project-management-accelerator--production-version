@@ -14,28 +14,27 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         try {
             if (isLoginView) {
-                const user = authService.login(email, password);
+                const user = await authService.login(email, password);
                 if (user) {
                     onLogin(user);
                 } else {
                     setError('Invalid email or password.');
                 }
             } else {
-                const newUser = authService.register(username, email, password);
+                const newUser = await authService.register(username, email, password);
                 if (newUser) {
-                    const user = authService.login(email, password);
-                    if (user) onLogin(user);
+                    onLogin(newUser);
                 } else {
                     setError('Username or email already exists.');
                 }
             }
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Authentication failed. Is the backend running?');
         }
     };
 

@@ -697,13 +697,16 @@ export const GlobalStyles = `
     flex-wrap: wrap;
   }
   .dashboard-nav button {
-    border: none;
+    border: 1px solid var(--secondary-text);
     background: transparent;
     padding: 0.5rem 1rem;
+    color: var(--secondary-text);
+    border-radius: 4px;
   }
   .dashboard-nav button.active {
     background: var(--accent-color);
     color: var(--background-color);
+    border-color: var(--accent-color);
   }
   
   /* General Tool Card */
@@ -958,52 +961,121 @@ export const GlobalStyles = `
   }
 
   /* Gantt Chart */
-  .gantt-container {
-      position: relative;
-      overflow-x: auto;
-      padding-bottom: 1rem; /* Space for dependency lines */
+  .gantt-wrapper {
+      display: flex;
+      overflow: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--background-color);
   }
-  .gantt-grid {
-      display: grid;
-      min-width: 1200px; /* Ensure there's space to scroll */
-  }
-  .gantt-header {
-      display: contents;
-  }
-  .gantt-date {
-      text-align: center;
-      padding: 0.5rem 0;
-      border-right: 1px solid var(--border-color);
-      border-bottom: 1px solid var(--border-color);
-      font-size: 0.8rem;
-      color: var(--secondary-text);
-  }
-  .gantt-sprint-label, .gantt-task-row {
-      display: contents;
-  }
-  .gantt-sprint-label {
-      grid-column: 1 / -1;
-      padding: 0.5rem;
+  .gantt-left-panel {
+      min-width: 200px;
+      max-width: 250px;
       background: var(--card-background);
-      font-weight: bold;
+      border-right: 2px solid var(--border-color);
       position: sticky;
       left: 0;
-      z-index: 1;
+      z-index: 10;
+  }
+  .gantt-task-header {
+      padding: 0.75rem 1rem;
+      font-weight: bold;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--card-background);
+      height: 40px;
+      display: flex;
+      align-items: center;
+      color: var(--accent-color);
+  }
+  .gantt-sprint-name {
+      padding: 0.5rem 1rem;
+      background: var(--background-color);
+      font-weight: bold;
+      color: var(--secondary-text);
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      height: 32px;
+      display: flex;
+      align-items: center;
+  }
+  .gantt-task-name {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      height: 40px;
+      display: flex;
+      align-items: center;
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+  }
+  .gantt-right-panel {
+      flex: 1;
+      min-width: 800px;
+  }
+  .gantt-timeline-header {
+      display: flex;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--card-background);
+      height: 40px;
+  }
+  .gantt-date-cell {
+      min-width: 50px;
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem 0.25rem;
+      border-right: 1px solid var(--border-color);
+      font-size: 0.75rem;
+      color: var(--secondary-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  .gantt-chart-body {
+      position: relative;
+  }
+  .gantt-sprint-row {
+      height: 32px;
+      background: var(--background-color);
       border-bottom: 1px solid var(--border-color);
   }
-  .gantt-task-bar {
-      margin: 4px 0;
-      padding: 0.5rem;
-      border-radius: 4px;
-      color: var(--primary-text);
-      font-size: 0.8rem;
-      white-space: nowrap;
-      cursor: pointer;
+  .gantt-task-row {
+      height: 40px;
+      border-bottom: 1px solid var(--border-color);
       position: relative;
-      z-index: 2;
-      overflow: visible;
+      display: flex;
   }
-  .gantt-task-bar.subcontracted::after {
+  .gantt-day-cell {
+      min-width: 50px;
+      flex: 1;
+      border-right: 1px solid rgba(51, 51, 74, 0.3);
+  }
+  .gantt-bar {
+      position: absolute;
+      top: 6px;
+      height: 28px;
+      border-radius: 4px;
+      padding: 0 0.5rem;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      overflow: hidden;
+      z-index: 5;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .gantt-bar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      z-index: 6;
+  }
+  .gantt-bar-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+  }
+  .gantt-bar.subcontracted::after {
       content: '';
       position: absolute;
       top: 0;
@@ -1017,40 +1089,23 @@ export const GlobalStyles = `
           transparent 5px,
           transparent 10px
       );
-      z-index: -1;
+      border-radius: 4px;
   }
-  .gantt-task-bar.task-bar-todo { background-color: var(--task-todo-color); }
-  .gantt-task-bar.task-bar-inprogress { background-color: var(--task-inprogress-color); }
-  .gantt-task-bar.task-bar-review { background-color: var(--task-review-color); }
-  .gantt-task-bar.task-bar-done { background-color: var(--task-done-color); color: var(--background-color); }
-  .gantt-task-bar.overdue {
-    box-shadow: 0 0 0 2px var(--error-color) inset;
+  .gantt-bar.task-bar-todo { background-color: var(--task-todo-color); color: var(--primary-text); }
+  .gantt-bar.task-bar-inprogress { background-color: var(--task-inprogress-color); color: var(--background-color); }
+  .gantt-bar.task-bar-review { background-color: var(--task-review-color); color: var(--background-color); }
+  .gantt-bar.task-bar-done { background-color: var(--task-done-color); color: var(--background-color); }
+  .gantt-bar.overdue {
+      box-shadow: 0 0 0 2px var(--error-color) inset;
   }
-  .gantt-task-bar.blocked {
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(255, 77, 77, 0.4),
-        rgba(255, 77, 77, 0.4) 5px,
-        transparent 5px,
-        transparent 10px
-    );
-  }
-  .gantt-dependency-svg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: visible;
-  }
-  .gantt-dependency-line {
-      stroke: var(--accent-color);
-      stroke-width: 1.5;
-      fill: none;
-  }
-  .gantt-dependency-arrow {
-      fill: var(--accent-color);
+  .gantt-bar.blocked {
+      background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 77, 77, 0.4),
+          rgba(255, 77, 77, 0.4) 5px,
+          transparent 5px,
+          transparent 10px
+      );
   }
 
   /* Kanban Board */

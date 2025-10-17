@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
+import type { AWSBedrockService } from '../utils/awsBedrockService';
 import { Project, Task, Notification, User, Milestone } from '../types';
 import { PHASES, PROMPTS } from '../constants/projectData';
 import { DashboardView } from '../tools/DashboardView';
@@ -13,8 +14,9 @@ import { TaskDetailModal } from '../components/TaskDetailModal';
 import { AiReportModal } from '../components/AiReportModal';
 import { TestingView } from '../tools/TestingView';
 import { parseMarkdownTable } from '../utils/be-logic';
+import { checkAndSendTaskNotifications } from '../utils/emailService';
 
-async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 1000): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 5000): Promise<T> {
     let lastError: Error;
     for (let i = 0; i < retries; i++) {
         try {
@@ -110,7 +112,7 @@ const truncatePrompt = (prompt: string): string => {
 interface ProjectDashboardProps {
     project: Project;
     onBack: () => void;
-    ai: GoogleGenAI;
+    ai: GoogleGenAI | AWSBedrockService;
     saveProject: (project: Project) => void;
     currentUser: User;
     key: number;
@@ -299,7 +301,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const promptWithContext = getPromptTextWithContext(finalContext.trim());
             const prompt = truncatePrompt(promptWithContext);
             
-            const result: GenerateContentResponse = await withRetry(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt }));
+            const result = await withRetry(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt }));
             const newContent = result.text;
 
             if (!projectStateOverride) {
@@ -319,7 +321,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             
             const compactPromptWithContent = PROMPTS.compactContent(contentForCompaction);
             const compactPrompt = truncatePrompt(compactPromptWithContent);
-            const compactResult: GenerateContentResponse = await withRetry(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents: compactPrompt }));
+            const compactResult = await withRetry(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents: compactPrompt }));
             const newCompactedContent = compactResult.text;
 
             if (!projectStateOverride) {
@@ -400,10 +402,9 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                     phasesData: updatedPhasesData,
                 };
                 
-                // Add a 3-second delay to better respect API rate limits, especially on free tiers.
-                // Each document generation involves two API calls (generation + compaction), so a longer
-                // pause is needed to avoid exceeding requests-per-minute quotas.
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Add a 10-second delay to respect AWS Bedrock rate limits.
+                // Each document generation involves two API calls (generation + compaction).
+                await new Promise(resolve => setTimeout(resolve, 10000));
 
             } else {
                 logAction('Automatic Generation Failed', doc.title, { docId: doc.id });
@@ -431,7 +432,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         handleSave(p => ({ phasesData: { ...p.phasesData, [docId]: { ...p.phasesData[docId], attachments: p.phasesData[docId]?.attachments.filter(f => f.name !== fileName) }}}));
     };
     
-    const handleUpdateTask = useCallback((taskId: string, updatedTaskData: Partial<Task>, previousStatus: string) => {
+    const handleUpdateTask = useCallback(async (taskId: string, updatedTaskData: Partial<Task>, previousStatus: string) => {
         let newNotifications: Notification[] = [];
         let newTasks: Task[] = [];
         
@@ -496,7 +497,15 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             tasks: [...updatedTasks, ...newTasks],
             notifications: [...(prevData.notifications || []), ...newNotifications]
         }));
-    }, [projectData.tasks, projectData.team, handleSave]);
+        
+        // Send email notifications if task was completed
+        if (updatedTaskData.status === 'done' && previousStatus !== 'done') {
+            const updatedTask = updatedTasks.find(t => t.id === taskId);
+            if (updatedTask) {
+                await checkAndSendTaskNotifications(updatedTask, updatedTasks, projectData);
+            }
+        }
+    }, [projectData, handleSave]);
 
     const handleSaveTask = (updatedTask: Task) => {
         const updatedTasks = projectData.tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
@@ -606,16 +615,13 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         const prevDocsWereComplete = prevDocumentsRef.current?.every(doc => doc.status === 'Approved');
         const currentDocsAreComplete = projectData.documents?.every(doc => doc.status === 'Approved');
     
+        prevDocumentsRef.current = projectData.documents;
+
         if (currentDocsAreComplete && !prevDocsWereComplete) {
-            // Only parse if tasks haven't been populated yet
             if ((!projectData.tasks || projectData.tasks.length === 0) && (!projectData.milestones || projectData.milestones.length === 0)) {
-                parseAndPopulateProjectPlan();
+                setTimeout(() => parseAndPopulateProjectPlan(), 0);
             }
         }
-    
-        // Update the ref for the next render
-        prevDocumentsRef.current = projectData.documents;
-    
     }, [projectData.documents, projectData.tasks, projectData.milestones, parseAndPopulateProjectPlan]);
 
     const handleNotificationClick = (notification: Notification) => {
@@ -758,7 +764,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             {activeTab === 'Dashboard' && <DashboardView project={projectData} phasesData={projectData.phasesData || {}} isPlanningComplete={isPlanningComplete} projectPhases={projectPhases} onAnalyzeRisks={handleAnalyzeRisks} onGenerateSummary={handleGenerateSummary} isGeneratingReport={isGeneratingReport} />}
             {activeTab === 'Project Phases' && <ProjectPhasesView project={projectData} projectPhases={projectPhases} phasesData={projectData.phasesData || {}} documents={projectData.documents} error={error} loadingPhase={loadingPhase} handleUpdatePhaseData={handleUpdatePhaseData} handleCompletePhase={(docId) => handleUpdateDocument(docId, 'Approved')} handleGenerateContent={handleGenerateContent} handleAttachFile={handleAttachFile} handleRemoveAttachment={handleRemoveAttachment} generationMode={projectData.generationMode} onSetGenerationMode={handleSetGenerationMode} isAutoGenerating={isAutoGenerating} />}
             {activeTab === 'Documents' && <DocumentsView project={projectData} documents={projectData.documents} onUpdateDocument={handleUpdateDocument} phasesData={projectData.phasesData || {}} ai={ai} />}
-            {activeTab === 'Project Tracking' && <ProjectTrackingView project={projectData} onUpdateTask={handleUpdateTask} onUpdateMilestone={handleUpdateMilestone} onUpdateTeam={handleUpdateTeam} onUpdateProject={handleSave} onTaskClick={setSelectedTask} currentUser={currentUser} />}
+            {activeTab === 'Project Tracking' && <ProjectTrackingView project={projectData} onUpdateTask={handleUpdateTask} onUpdateMilestone={handleUpdateMilestone} onUpdateTeam={handleUpdateTeam} onUpdateProject={handleSave} onTaskClick={setSelectedTask} currentUser={currentUser} ai={ai} />}
             {activeTab === 'Revision Control' && <RevisionControlView project={projectData} onUpdateProject={(update) => handleSave(update)} ai={ai} />}
             {activeTab === 'Testing' && <TestingView project={projectData} saveProject={saveProject} />}
 

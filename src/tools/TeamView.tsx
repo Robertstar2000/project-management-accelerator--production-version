@@ -36,6 +36,12 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         onUpdateTeam(filteredAssignments);
     };
 
+    const handleNotificationToggle = (role, checked) => {
+        const assignment = teamAssignments.find(a => a.role === role);
+        if (!assignment || !assignment.name || !assignment.email) return;
+        handleAssignmentChange(role, 'sendNotifications', checked);
+    };
+
     const handleTransferOwnership = (newOwnerId: string) => {
         if (!window.confirm("Are you sure you want to transfer ownership of this project? This action cannot be undone.")) return;
         
@@ -60,11 +66,12 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         <div>
              <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>Assign team members to roles. The project owner has full permissions.</p>
             <table className="task-list-table">
-                <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Send Notifications</th><th>Actions</th></tr></thead>
                 <tbody>
                     {extractedRoles.map(role => {
                         const assignment = teamAssignments.find(a => a.role === role) || { name: '', email: '' };
                         const member = project.team.find(m => m.role === role);
+                        const canEnableNotifications = assignment.name && assignment.email;
                         return (
                             <tr key={role} style={{cursor: 'initial'}}>
                                 <td><strong>{role}</strong></td>
@@ -73,6 +80,15 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
                                 </td>
                                 <td>
                                     <input type="email" value={assignment.email} onChange={(e) => handleAssignmentChange(role, 'email', e.target.value)} />
+                                </td>
+                                <td>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={assignment.sendNotifications || false}
+                                        disabled={!canEnableNotifications}
+                                        onChange={(e) => handleNotificationToggle(role, e.target.checked)}
+                                        title={!canEnableNotifications ? 'Assign name and email first' : 'Send email when tasks are ready'}
+                                    />
                                 </td>
                                 <td>
                                     {currentUser.id === project.ownerId && member && member.userId !== project.ownerId && (

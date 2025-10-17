@@ -11,6 +11,7 @@ export interface TeamMember {
     role: string;
     name: string;
     email: string;
+    sendNotifications?: boolean;
 }
 
 export interface Comment {
@@ -50,6 +51,8 @@ export interface Task {
     recurrence?: {
         interval: 'none' | 'daily' | 'weekly' | 'monthly';
     };
+    useAgent?: boolean;
+    agentStatus?: 'idle' | 'running' | 'completed' | 'failed';
 }
 
 export interface Notification {

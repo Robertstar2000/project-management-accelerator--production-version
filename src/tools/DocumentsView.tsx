@@ -98,7 +98,7 @@ Provide the complete, independent source code for each required file. Do not inc
             const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-project-generation-prompt.txt`;
+            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 100)}-project-generation-prompt.txt`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -198,7 +198,7 @@ Present your findings in a clear, structured report using Markdown. Use the foll
             const blob = new Blob([textToDownload], { type: 'text/markdown;charset=utf-8' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-simulation-prompt.md`;
+            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 100)}-simulation-prompt.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -225,14 +225,14 @@ Present your findings in a clear, structured report using Markdown. Use the foll
             const compactedContent = phasesData[doc.id]?.compactedContent;
             
             if (content) {
-                const folderName = `Phase ${doc.phase}`;
-                const sanitizedTitle = doc.title.replace(/[\\/:"*?<>|]/g, '');
+                const folderName = `Phase ${doc.phase}`.replace(/[^a-zA-Z0-9\s-]/g, '_');
+                const sanitizedTitle = doc.title.replace(/[^a-zA-Z0-9\s-]/g, '_').substring(0, 200);
                 const fileName = `${sanitizedTitle}.md`;
-                zip.folder(folderName).file(fileName, content);
+                zip.folder(folderName)?.file(fileName, content);
                 
                 if (compactedContent) {
                     const compactedFileName = `${sanitizedTitle}.compacted.md`;
-                    zip.folder(folderName).file(compactedFileName, compactedContent);
+                    zip.folder(folderName)?.file(compactedFileName, compactedContent);
                 }
             }
         });
@@ -241,7 +241,7 @@ Present your findings in a clear, structured report using Markdown. Use the foll
             const zipBlob = await zip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(zipBlob);
-            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-documents.zip`;
+            link.download = `${project.name.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 50)}-documents.zip`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
