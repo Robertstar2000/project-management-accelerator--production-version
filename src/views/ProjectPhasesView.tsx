@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { PhaseCard } from '../components/PhaseCard';
 import { PHASE_DOCUMENT_REQUIREMENTS } from '../constants/projectData';
 
-export const ProjectPhasesView = ({ project, projectPhases, phasesData, documents, error, loadingPhase, handleUpdatePhaseData, handleCompletePhase, handleGenerateContent, handleAttachFile, handleRemoveAttachment, generationMode, onSetGenerationMode, isAutoGenerating }) => {
+export const ProjectPhasesView = ({ project, projectPhases, phasesData, documents, error, loadingPhase, handleUpdatePhaseData, handleCompletePhase, handleGenerateContent, handleAttachFile, handleRemoveAttachment, generationMode, onSetGenerationMode, isAutoGenerating, currentUser }) => {
     const [openPhases, setOpenPhases] = useState(() => {
         try {
             // Default to opening the first un-approved document
             const firstTodoDoc = documents.find(d => d.status !== 'Approved');
             const defaultOpen = firstTodoDoc ? [firstTodoDoc.id] : (projectPhases.length > 0 ? [projectPhases[0].id] : []);
-            const saved = localStorage.getItem(`hmap-open-phases-${project.id}`);
+            const saved = localStorage.getItem(`hmap-open-phases-${currentUser.id}-${project.id}`);
             return saved ? JSON.parse(saved) : defaultOpen;
         } catch (e) {
             console.error("Failed to parse open phases from localStorage", e);
@@ -24,7 +24,7 @@ export const ProjectPhasesView = ({ project, projectPhases, phasesData, document
             ? openPhases.filter(id => id !== docId)
             : [...openPhases, docId];
         setOpenPhases(newOpenPhases);
-        localStorage.setItem(`hmap-open-phases-${project.id}`, JSON.stringify(newOpenPhases));
+        localStorage.setItem(`hmap-open-phases-${currentUser.id}-${project.id}`, JSON.stringify(newOpenPhases));
     };
 
     const getLockStatus = (docId) => {

@@ -13,7 +13,10 @@ const ResourcesView = ({ project, onUpdateProject }) => {
     const [resources, setResources] = useState(project.resources || []);
 
     const extractedResources = useMemo(() => {
-        const resourceDoc = project.documents.find(d => d.title === 'Resources & Skills List');
+        const resourceDoc = project.documents.find(d => {
+            const title = d.title.toLowerCase();
+            return title.includes('resources') && title.includes('skills');
+        });
         if (!resourceDoc || !project.phasesData || !project.phasesData[resourceDoc.id]?.content) return [];
         return parseResourcesFromMarkdown(project.phasesData[resourceDoc.id].content);
     }, [project.documents, project.phasesData]);
@@ -455,7 +458,10 @@ const getProjectWeeks = (startDateStr: string, endDateStr: string): Date[] => {
 const generateWorkloadMarkdown = (p: Project): string => {
     let content = `# Workload Snapshot for ${p.name}\n\nThis table shows the total number of workdays assigned to each role per week.\n\n`;
     const { team, tasks, startDate, endDate, documents, phasesData } = p;
-    const resourceDoc = documents.find(d => d.title === 'Resources & Skills List');
+    const resourceDoc = documents.find(d => {
+        const title = d.title.toLowerCase();
+        return title.includes('resources') && title.includes('skills');
+    });
     const extractedRoles = resourceDoc && phasesData[resourceDoc.id] ? parseRolesFromMarkdown(phasesData[resourceDoc.id].content) : [];
 
     if (!tasks || tasks.length === 0 || extractedRoles.length === 0) return content + "Not enough data to generate workload view.";
@@ -513,7 +519,10 @@ const generateMilestonesMarkdown = (p: Project): string => {
 const generateTeamMarkdown = (p: Project): string => {
     let content = `# Team Snapshot for ${p.name}\n\n`;
     const { team, documents, phasesData } = p;
-    const resourceDoc = documents.find(d => d.title === 'Resources & Skills List');
+    const resourceDoc = documents.find(d => {
+        const title = d.title.toLowerCase();
+        return title.includes('resources') && title.includes('skills');
+    });
     const extractedRoles = resourceDoc && phasesData[resourceDoc.id] ? parseRolesFromMarkdown(phasesData[resourceDoc.id].content) : [];
 
     if (extractedRoles.length === 0) return content + "No roles defined in 'Resources & Skills List' document.";
@@ -557,9 +566,9 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
     const [agentProgress, setAgentProgress] = useState<{ agent: string; iteration: number; preview: string } | null>(null);
 
     useEffect(() => {
-        const savedView = localStorage.getItem(`hmap-tracking-view-${project.id}`);
+        const savedView = localStorage.getItem(`hmap-tracking-view-${currentUser.id}-${project.id}`);
         if (savedView) setTrackingView(savedView);
-    }, [project.id]);
+    }, [project.id, currentUser.id]);
     
     useEffect(() => {
         const handleAgentTrigger = (event: CustomEvent) => {
@@ -576,7 +585,7 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
 
     const handleViewChange = (view) => {
         setTrackingView(view);
-        localStorage.setItem(`hmap-tracking-view-${project.id}`, view);
+        localStorage.setItem(`hmap-tracking-view-${currentUser.id}-${project.id}`, view);
     };
 
     const viewOrder = ['Timeline', 'Task List', 'Kanban Board', 'Workload', 'Milestones', 'Team', 'Resources'];
@@ -759,6 +768,28 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
 
     return (
         <div className="tool-card">
+            <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button 
+                    className="button" 
+                    onClick={() => {
+                        if (window.confirm('This will recreate all tasks and milestones from the planning documents. Current tracking data will be lost. Continue?')) {
+                            onUpdateProject({ tasks: [], milestones: [] });
+                        }
+                    }}
+                >
+                    Recreate Tracking Data
+                </button>
+                <button 
+                    className="button" 
+                    onClick={() => {
+                        if (window.confirm('This will recreate team roles and resources from the Resources & Skills document. Current data will be lost. Continue?')) {
+                            onUpdateProject({ resources: [], team: [] });
+                        }
+                    }}
+                >
+                    Recreate Team/Resources Data
+                </button>
+            </div>
             {trackingView === 'Task List' && (
                 <div style={{ padding: '1rem', backgroundColor: 'var(--background-secondary)', borderRadius: '4px', marginBottom: '1rem', border: '1px solid var(--border-color)' }}>
                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--secondary-text)' }}>
@@ -774,38 +805,6 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
                 </div>
             )}
             <div className="tracking-view-header">
-                {trackingView === 'Timeline' && (
-                    <div style={{ marginBottom: '1rem' }}>
-                        <button 
-                            className="button" 
-                            onClick={() => {
-                                if (window.confirm('This will recreate all tasks and milestones from the planning documents. Current tracking data will be lost. Continue?')) {
-                                    onUpdateProject({ tasks: [], milestones: [] });
-                                    setTimeout(() => window.location.reload(), 100);
-                                }
-                            }}
-                        >
-                            Recreate Tracking Data
-                        </button>
-                        <span style={{ marginLeft: '1rem', fontSize: '0.85rem', color: 'var(--secondary-text)' }}>Use this if you regenerated planning documents</span>
-                    </div>
-                )}
-                {(trackingView === 'Team' || trackingView === 'Resources') && (
-                    <div style={{ marginBottom: '1rem' }}>
-                        <button 
-                            className="button" 
-                            onClick={() => {
-                                if (window.confirm('This will recreate team roles and resources from the Resources & Skills document. Current data will be lost. Continue?')) {
-                                    onUpdateProject({ resources: [], team: [] });
-                                    setTimeout(() => window.location.reload(), 100);
-                                }
-                            }}
-                        >
-                            Recreate Team/Resources Data
-                        </button>
-                        <span style={{ marginLeft: '1rem', fontSize: '0.85rem', color: 'var(--secondary-text)' }}>Use this if you regenerated Resources & Skills document</span>
-                    </div>
-                )}
                 <div className="tracking-view-tabs">
                     {viewOrder.map(viewName => (
                         <button

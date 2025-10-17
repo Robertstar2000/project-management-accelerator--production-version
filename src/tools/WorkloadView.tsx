@@ -42,7 +42,10 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
     const { team, tasks, startDate, endDate, documents, phasesData } = project;
     
     const extractedRoles = useMemo(() => {
-        const resourceDoc = documents.find(d => d.title === 'Resources & Skills List');
+        const resourceDoc = documents.find(d => {
+            const title = d.title.toLowerCase();
+            return title.includes('resources') && title.includes('skills');
+        });
         if (!resourceDoc || !phasesData || !phasesData[resourceDoc.id]?.content) return [];
         return parseRolesFromMarkdown(phasesData[resourceDoc.id].content);
     }, [documents, phasesData]);
@@ -52,7 +55,12 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
     }
 
     if (extractedRoles.length === 0) {
-        return <p>Workload view requires roles to be defined in the 'Resources & Skills List' document.</p>;
+        return (
+            <div>
+                <p>Workload view requires roles to be defined in the 'Resources & Skills List' document.</p>
+                <p style={{color: 'var(--secondary-text)', marginTop: '1rem'}}>If you have regenerated the Resources & Skills document, use the "Recreate Team/Resources Data" button above to reload the roles.</p>
+            </div>
+        );
     }
 
     const projectWeeks = getProjectWeeks(startDate, endDate);

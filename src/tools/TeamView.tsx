@@ -14,7 +14,10 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
     const [teamAssignments, setTeamAssignments] = useState(project.team || []);
 
     const extractedRoles = useMemo(() => {
-        const resourceDoc = project.documents.find(d => d.title === 'Resources & Skills List');
+        const resourceDoc = project.documents.find(d => {
+            const title = d.title.toLowerCase();
+            return title.includes('resources') && title.includes('skills');
+        });
         if (!resourceDoc || !project.phasesData || !project.phasesData[resourceDoc.id]) return [];
         return parseRolesFromMarkdown(project.phasesData[resourceDoc.id].content);
     }, [project.documents, project.phasesData]);
@@ -58,6 +61,7 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         return (
              <div style={{ textAlign: 'center', padding: '2rem' }}>
                 <p>Team roles will be populated here once the 'Resources & Skills List' document is generated and approved.</p>
+                <p style={{color: 'var(--secondary-text)', marginTop: '1rem'}}>If you have regenerated the Resources & Skills document, use the "Recreate Team/Resources Data" button above to reload the roles.</p>
              </div>
         )
     }

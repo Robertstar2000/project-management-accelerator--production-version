@@ -197,14 +197,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             logAction('Navigate Tab', tabName, { from: currentTab, to: tabName });
             return tabName;
         });
-        localStorage.setItem(`hmap-active-tab-${project.id}`, tabName);
-    }, [project.id]);
+        localStorage.setItem(`hmap-active-tab-${currentUser.id}-${project.id}`, tabName);
+    }, [project.id, currentUser.id]);
 
     useEffect(() => {
-        const savedTab = localStorage.getItem(`hmap-active-tab-${project.id}`);
+        const savedTab = localStorage.getItem(`hmap-active-tab-${currentUser.id}-${project.id}`);
         const isSavedTabLocked = !isPlanningComplete && ['Dashboard', 'Project Tracking', 'Revision Control'].includes(savedTab);
         setActiveTab(savedTab && !isSavedTabLocked ? savedTab : 'Project Phases');
-    }, [project.id, isPlanningComplete]);
+    }, [project.id, currentUser.id, isPlanningComplete]);
     
     const handleUpdatePhaseData = useCallback((docId: string, content: string, compactedContent?: string) => {
         handleSave(prevData => {
@@ -575,10 +575,19 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             }
     
             const content = projectData.phasesData[planDoc.id].content;
-            const sections = content.split('## ').slice(1);
+            
+            // Try multiple heading levels and formats
+            let sections = content.split(/^## /m).slice(1);
+            if (sections.length === 0) sections = content.split(/^### /m).slice(1);
+            if (sections.length === 0) sections = content.split(/^# /m).slice(1);
             
             const tasksText = sections.find(s => s.toLowerCase().startsWith('tasks')) || '';
-            const milestonesText = sections.find(s => s.toLowerCase().startsWith('milestones')) || '';
+            const milestonesText = sections.find(s => s.toLowerCase().startsWith('milestones')) || 
+                                   sections.find(s => s.toLowerCase().startsWith('milestone')) || '';
+            
+            console.log('Sections found:', sections.length);
+            console.log('Milestones section found:', !!milestonesText);
+            console.log('Milestones text preview:', milestonesText.substring(0, 200));
     
             // Parse Tasks
             const parsedTasks = parseMarkdownTable(tasksText);
@@ -625,15 +634,29 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                     .filter((id): id is string => !!id);
             });
     
-            // Parse Milestones
+            // Parse Milestones - handle all possible column name variations
             const parsedMilestones = parseMarkdownTable(milestonesText);
-            const newMilestones: Milestone[] = parsedMilestones.map((m, index) => ({
-                id: `milestone-${Date.now()}-${index}`,
-                name: m.milestone_name || m.name || `Milestone ${index + 1}`,
-                plannedDate: m.date_yyyy_mm_dd || m.date || new Date().toISOString().split('T')[0],
-                status: 'Planned',
-            })).filter(m => m.name && m.plannedDate);
+            console.log('Parsed milestones raw:', parsedMilestones);
+            
+            const newMilestones: Milestone[] = parsedMilestones.length > 0 
+                ? parsedMilestones.map((m, index) => {
+                    // Try all possible name column variations
+                    const milestoneName = m.milestone_name || m.milestonename || m.name || m.milestone || `Milestone ${index + 1}`;
+                    // Try all possible date column variations
+                    const milestoneDate = m.date_yyyy_mm_dd || m.date || m.planned_date || m.planneddate || m.target_date || m.targetdate || new Date().toISOString().split('T')[0];
+                    
+                    return {
+                        id: `milestone-${Date.now()}-${index}`,
+                        name: milestoneName,
+                        plannedDate: milestoneDate,
+                        status: 'Planned',
+                    };
+                })
+                : [];
+            
+            console.log('Final milestones:', newMilestones);
     
+            console.log('Saving tasks:', newTasks.length, 'milestones:', newMilestones.length);
             handleSave({ tasks: newTasks, milestones: newMilestones });
             logAction('Plan Parsing Success', project.name, { taskCount: newTasks.length, milestoneCount: newMilestones.length });
             handleTabChange('Project Tracking');
@@ -647,14 +670,15 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         }
     }, [project.name, projectData.documents, projectData.phasesData, projectData.sprints, handleSave, handleTabChange]);
 
-    // This effect detects when planning is newly completed.
+    // This effect detects when planning is newly completed OR when data is cleared for reparsing
     useEffect(() => {
         const prevDocsWereComplete = prevDocumentsRef.current?.every(doc => doc.status === 'Approved');
         const currentDocsAreComplete = projectData.documents?.every(doc => doc.status === 'Approved');
     
         prevDocumentsRef.current = projectData.documents;
 
-        if (currentDocsAreComplete && !prevDocsWereComplete) {
+        // Parse if docs are complete and (newly completed OR data was cleared)
+        if (currentDocsAreComplete) {
             if ((!projectData.tasks || projectData.tasks.length === 0) && (!projectData.milestones || projectData.milestones.length === 0)) {
                 setTimeout(() => parseAndPopulateProjectPlan(), 0);
             }
@@ -799,7 +823,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             {isParsingPlan && <div className="status-message loading" style={{marginBottom: '2rem'}}><div className="spinner"></div><p>Parsing project plan and populating tracking tools...</p></div>}
             
             {activeTab === 'Dashboard' && <DashboardView project={projectData} phasesData={projectData.phasesData || {}} isPlanningComplete={isPlanningComplete} projectPhases={projectPhases} onAnalyzeRisks={handleAnalyzeRisks} onGenerateSummary={handleGenerateSummary} isGeneratingReport={isGeneratingReport} />}
-            {activeTab === 'Project Phases' && <ProjectPhasesView project={projectData} projectPhases={projectPhases} phasesData={projectData.phasesData || {}} documents={projectData.documents} error={error} loadingPhase={loadingPhase} handleUpdatePhaseData={handleUpdatePhaseData} handleCompletePhase={(docId) => handleUpdateDocument(docId, 'Approved')} handleGenerateContent={handleGenerateContent} handleAttachFile={handleAttachFile} handleRemoveAttachment={handleRemoveAttachment} generationMode={projectData.generationMode} onSetGenerationMode={handleSetGenerationMode} isAutoGenerating={isAutoGenerating} />}
+            {activeTab === 'Project Phases' && <ProjectPhasesView project={projectData} projectPhases={projectPhases} phasesData={projectData.phasesData || {}} documents={projectData.documents} error={error} loadingPhase={loadingPhase} handleUpdatePhaseData={handleUpdatePhaseData} handleCompletePhase={(docId) => handleUpdateDocument(docId, 'Approved')} handleGenerateContent={handleGenerateContent} handleAttachFile={handleAttachFile} handleRemoveAttachment={handleRemoveAttachment} generationMode={projectData.generationMode} onSetGenerationMode={handleSetGenerationMode} isAutoGenerating={isAutoGenerating} currentUser={currentUser} />}
             {activeTab === 'Documents' && <DocumentsView project={projectData} documents={projectData.documents} onUpdateDocument={handleUpdateDocument} phasesData={projectData.phasesData || {}} ai={ai} />}
             {activeTab === 'Project Tracking' && <ProjectTrackingView project={projectData} onUpdateTask={handleUpdateTask} onUpdateMilestone={handleUpdateMilestone} onUpdateTeam={handleUpdateTeam} onUpdateProject={handleSave} onTaskClick={setSelectedTask} currentUser={currentUser} ai={ai} />}
             {activeTab === 'Revision Control' && <RevisionControlView project={projectData} onUpdateProject={(update) => handleSave(update)} ai={ai} />}

@@ -84,32 +84,51 @@ export const parseResourcesFromMarkdown = (markdownText: string): string[] => {
 export const parseRolesFromMarkdown = (markdownText: string): string[] => {
     if (!markdownText) return [];
     const lines = markdownText.split('\n');
-    const roleSectionKeywords = ['roles', 'personnel', 'team members', 'team'];
+    const roleSectionKeywords = ['required roles', 'roles', 'personnel', 'team members', 'team'];
     let roleLines: string[] = [];
     let sectionStartIndex = -1;
+    
+    // Find the roles section
     for (const keyword of roleSectionKeywords) {
         const headingRegex = new RegExp(`^#+\\s*.*${keyword}.*`, 'i');
         sectionStartIndex = lines.findIndex(line => headingRegex.test(line));
         if (sectionStartIndex !== -1) break;
     }
+    
     if (sectionStartIndex !== -1) {
+        // Extract lines until next heading or end of document
         let sectionEndIndex = lines.findIndex((line, i) => i > sectionStartIndex && line.match(/^#+/));
         if (sectionEndIndex === -1) sectionEndIndex = lines.length;
-        roleLines = lines.slice(sectionStartIndex + 1, sectionEndIndex).filter(line => line.match(/^[-*]\s+/));
+        roleLines = lines.slice(sectionStartIndex + 1, sectionEndIndex)
+            .filter(line => line.trim().match(/^[-*]\s+/));
     }
+    
+    // Fallback: if no section found, look for first bulleted list
     if (roleLines.length === 0) {
         let foundList = false;
         for (const line of lines) {
-            if (line.match(/^[-*]\s+/)) {
+            if (line.trim().match(/^[-*]\s+/)) {
                 foundList = true;
                 roleLines.push(line);
             } else if (foundList && line.trim() === '') break;
         }
     }
+    
     const roles = new Set<string>();
     for (const line of roleLines) {
-        const roleName = line.replace(/^[-*]\s+/, '').replace(/\*\*/g, '').split(/[:(]/)[0].trim();
-        if (roleName) roles.add(roleName);
+        // Remove bullet, bold markers, and extract role name before colon or parenthesis
+        let roleName = line
+            .replace(/^\s*[-*]\s+/, '')  // Remove bullet and leading whitespace
+            .replace(/\*\*/g, '')         // Remove bold markers
+            .split(/[:(]/)[0]             // Split on colon or opening parenthesis
+            .trim();
+        
+        // Skip empty lines and "None" entries
+        if (roleName && roleName.toLowerCase() !== 'none') {
+            roles.add(roleName);
+        }
     }
+    
+    console.log('Parsed roles:', Array.from(roles));
     return Array.from(roles);
 };

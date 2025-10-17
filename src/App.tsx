@@ -48,12 +48,13 @@ const App = () => {
   }, [projects, userProjects, recentlyViewedIds]);
 
   const reloadStateFromStorage = useCallback(() => {
+    if (!currentUser) return;
     try {
       logAction('Sync Update', 'BroadcastChannel', { message: 'Forcing state reload' });
-      const storedProjects = localStorage.getItem('hmap-projects');
+      const storedProjects = localStorage.getItem(`hmap-projects-${currentUser.id}`);
       if (storedProjects) {
           setProjects(JSON.parse(storedProjects));
-          const selectedProjectId = localStorage.getItem('hmap-selected-project-id');
+          const selectedProjectId = localStorage.getItem(`hmap-selected-project-id-${currentUser.id}`);
           if (selectedProjectId && selectedProject && selectedProjectId === selectedProject.id) {
               const updatedSelectedProject = JSON.parse(storedProjects).find(p => p.id === selectedProjectId);
               if (updatedSelectedProject) {
@@ -65,7 +66,7 @@ const App = () => {
     } catch (error) {
       console.error('Failed to reload state:', error);
     }
-  }, [selectedProject]);
+  }, [selectedProject, currentUser]);
 
   useEffect(() => {
     const unsubscribe = subscribeToUpdates(reloadStateFromStorage);
@@ -78,15 +79,15 @@ const App = () => {
       const genAI = new GoogleGenAI({ apiKey: key });
       setAi(genAI);
       setApiKeyStatus(source);
-      if (source === 'user') {
-        localStorage.setItem('hmap-gemini-key', key);
+      if (source === 'user' && currentUser) {
+        localStorage.setItem(`hmap-gemini-key-${currentUser.id}`, key);
       }
       return true;
     } catch (error: any) {
       console.error(`Failed to initialize GoogleGenAI from ${source}:`, error);
       return false;
     }
-  }, []);
+  }, [currentUser]);
 
   const initializeAwsBedrock = useCallback(async (): Promise<boolean> => {
     try {
@@ -115,7 +116,9 @@ const App = () => {
   const handleSetUserKey = useCallback((key: string | null) => {
     if (key === null) { 
         setAi(null);
-        localStorage.removeItem('hmap-gemini-key');
+        if (currentUser) {
+          localStorage.removeItem(`hmap-gemini-key-${currentUser.id}`);
+        }
         setApiKeyStatus('none');
         logAction('Clear API Key', 'User Action', { apiKeyStatus: 'none' });
         return;
@@ -125,17 +128,19 @@ const App = () => {
     } else {
         alert('The provided API Key appears to be invalid. Please check it and try again.');
     }
-  }, [initializeAi]);
+  }, [initializeAi, currentUser]);
 
   useEffect(() => {
+    if (!currentUser) return;
+    
     try {
-      const storedProjects = localStorage.getItem('hmap-projects');
+      const storedProjects = localStorage.getItem(`hmap-projects-${currentUser.id}`);
       if (storedProjects) {
         setProjects(JSON.parse(storedProjects));
       } else {
-        localStorage.setItem('hmap-projects', JSON.stringify([]));
+        localStorage.setItem(`hmap-projects-${currentUser.id}`, JSON.stringify([]));
       }
-      const storedRecentIds = localStorage.getItem('hmap-recently-viewed');
+      const storedRecentIds = localStorage.getItem(`hmap-recently-viewed-${currentUser.id}`);
       if (storedRecentIds) {
           setRecentlyViewedIds(JSON.parse(storedRecentIds));
       }
@@ -156,11 +161,11 @@ const App = () => {
       }
 
       // Try user's Gemini key
-      const userKey = localStorage.getItem('hmap-gemini-key');
+      const userKey = localStorage.getItem(`hmap-gemini-key-${currentUser.id}`);
       if (userKey) {
         initialized = initializeAi(userKey, 'user');
         if (initialized) return;
-        localStorage.removeItem('hmap-gemini-key');
+        localStorage.removeItem(`hmap-gemini-key-${currentUser.id}`);
       }
       
       // Try environment Gemini key
@@ -173,12 +178,17 @@ const App = () => {
       console.warn('No AI service initialized');
       setApiKeyStatus('none');
     })();
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
-    const selectedProjectId = localStorage.getItem('hmap-selected-project-id');
+    if (!currentUser) {
+      setSelectedProject(null);
+      return;
+    }
     
-    if (currentUser && selectedProjectId && projects.length > 0) {
+    const selectedProjectId = localStorage.getItem(`hmap-selected-project-id-${currentUser.id}`);
+    
+    if (selectedProjectId && projects.length > 0) {
         const projectToSelect = projects.find(p => p.id === selectedProjectId);
         
         if (projectToSelect) {
@@ -188,25 +198,24 @@ const App = () => {
                 setSelectedProject(projectToSelect);
             } else {
                 setSelectedProject(null);
-                localStorage.removeItem('hmap-selected-project-id');
+                localStorage.removeItem(`hmap-selected-project-id-${currentUser.id}`);
             }
         } else {
-            localStorage.removeItem('hmap-selected-project-id');
+            localStorage.removeItem(`hmap-selected-project-id-${currentUser.id}`);
         }
-    } else if (!currentUser) {
-        setSelectedProject(null);
     }
   }, [currentUser, projects]);
   
   const saveProjectsToStorage = useCallback((updatedProjects: Project[]) => {
+    if (!currentUser) return;
     try {
-      localStorage.setItem('hmap-projects', JSON.stringify(updatedProjects));
+      localStorage.setItem(`hmap-projects-${currentUser.id}`, JSON.stringify(updatedProjects));
       notifyUpdate();
     } catch (error: any) {
       console.error("Failed to save projects to localStorage:", error);
       alert('Failed to save project data. Please check your browser storage settings.');
     }
-  }, []);
+  }, [currentUser]);
 
   const handleCreateProject = useCallback(async ({ name, template, mode, scope, teamSize, complexity }: any) => {
     if (userLimits.projectLimit !== -1 && userLimits.projectCount >= userLimits.projectLimit) {
@@ -299,12 +308,13 @@ const App = () => {
   }, [projects, selectedProject, saveProjectsToStorage]);
   
   const handleSelectProject = useCallback((project: Project | null) => {
+    if (!currentUser) return;
     const projectName = project?.name || 'Home';
     const projectId = project?.id || null;
     logAction('Select Project', projectName, { projectId });
     setSelectedProject(project);
     if (project) {
-        localStorage.setItem('hmap-selected-project-id', project.id);
+        localStorage.setItem(`hmap-selected-project-id-${currentUser.id}`, project.id);
         const MAX_RECENT = 4;
         const updatedRecentIds = [
             project.id,
@@ -312,11 +322,11 @@ const App = () => {
         ].slice(0, MAX_RECENT);
         
         setRecentlyViewedIds(updatedRecentIds);
-        localStorage.setItem('hmap-recently-viewed', JSON.stringify(updatedRecentIds));
+        localStorage.setItem(`hmap-recently-viewed-${currentUser.id}`, JSON.stringify(updatedRecentIds));
     } else {
-        localStorage.removeItem('hmap-selected-project-id');
+        localStorage.removeItem(`hmap-selected-project-id-${currentUser.id}`);
     }
-  }, [recentlyViewedIds]);
+  }, [recentlyViewedIds, currentUser]);
 
   const handleSelectTask = useCallback((project: Project, task: Task) => {
     logAction('Select Task from My Work', task.name, { projectId: project.id, taskId: task.id });
@@ -330,12 +340,13 @@ const App = () => {
   }, []);
 
   const cleanupProjectData = useCallback((projectId: string) => {
-    localStorage.removeItem('hmap-selected-project-id');
-    localStorage.removeItem(`hmap-active-tab-${projectId}`);
-    localStorage.removeItem(`hmap-open-phases-${projectId}`);
-    localStorage.removeItem(`hmap-tracking-view-${projectId}`);
+    if (!currentUser) return;
+    localStorage.removeItem(`hmap-selected-project-id-${currentUser.id}`);
+    localStorage.removeItem(`hmap-active-tab-${currentUser.id}-${projectId}`);
+    localStorage.removeItem(`hmap-open-phases-${currentUser.id}-${projectId}`);
+    localStorage.removeItem(`hmap-tracking-view-${currentUser.id}-${projectId}`);
     logAction('Cleanup Project Data', 'localStorage', { projectId });
-  }, []);
+  }, [currentUser]);
 
   const handleNewProjectRequest = useCallback(() => {
     logAction('Open Project Manager', 'User Action', {});
@@ -359,7 +370,7 @@ const App = () => {
     cleanupProjectData(projectToDelete.id);
     const updatedRecentIds = recentlyViewedIds.filter(id => id !== projectToDelete.id);
     setRecentlyViewedIds(updatedRecentIds);
-    localStorage.setItem('hmap-recently-viewed', JSON.stringify(updatedRecentIds));
+    localStorage.setItem(`hmap-recently-viewed-${currentUser.id}`, JSON.stringify(updatedRecentIds));
     if (selectedProject && selectedProject.id === projectToDelete.id) {
         setSelectedProject(null);
     }
@@ -415,7 +426,8 @@ const App = () => {
     authService.logout();
     setCurrentUser(null);
     setSelectedProject(null);
-    localStorage.removeItem('hmap-selected-project-id');
+    setProjects([]);
+    setRecentlyViewedIds([]);
   }, []);
 
   useEffect(() => {
