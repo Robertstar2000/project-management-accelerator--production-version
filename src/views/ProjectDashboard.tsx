@@ -229,6 +229,21 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
     const handleGenerateContent = useCallback(async (docId: string, userInput: string, projectStateOverride?: Project) => {
         if (!projectStateOverride) {
             setLoadingPhase({ docId, step: 'generating' });
+            
+            // Reset document status when regenerating
+            const doc = projectDataRef.current.documents.find(d => d.id === docId);
+            if (doc?.status === 'Approved') {
+                handleUpdateDocument(docId, 'Working');
+                
+                // Clear related data when regenerating key documents
+                const title = doc.title.toLowerCase();
+                if (title.includes('detailed plans') || title.includes('wbs') || title.includes('wrs')) {
+                    handleSave({ tasks: [], milestones: [] });
+                }
+                if (title.includes('resources') && title.includes('skills')) {
+                    handleSave({ resources: [], team: [] });
+                }
+            }
         }
         setError('');
         const currentProjectData = projectStateOverride || projectDataRef.current;
@@ -580,16 +595,20 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 const sprintName = t.sprint || '';
                 const sprint = projectData.sprints.find(s => s.name.toLowerCase() === sprintName.toLowerCase().trim());
     
+                // Parse dates - handle multiple possible column formats
+                const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || new Date().toISOString().split('T')[0];
+                const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || new Date().toISOString().split('T')[0];
+                
                 return {
                     id: taskId,
                     name: taskName,
                     role: t.role || null,
-                    startDate: t.start_date_yyyy_mm_dd || new Date().toISOString().split('T')[0],
-                    endDate: t.end_date_yyyy_mm_dd || new Date().toISOString().split('T')[0],
+                    startDate: startDate,
+                    endDate: endDate,
                     sprintId: sprint ? sprint.id : projectData.sprints[0]?.id || 'sprint1',
                     status: 'todo',
                     isSubcontracted: t.subcontractor?.toLowerCase().trim() === 'yes',
-                    dependsOn: t.dependencies ? t.dependencies.split(',').map(d => d.trim()) : [], // Store names temporarily
+                    dependsOn: t.dependencies ? t.dependencies.split(',').map(d => d.trim()) : [],
                     description: '',
                     actualTime: null,
                     actualCost: null,
@@ -610,10 +629,10 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const parsedMilestones = parseMarkdownTable(milestonesText);
             const newMilestones: Milestone[] = parsedMilestones.map((m, index) => ({
                 id: `milestone-${Date.now()}-${index}`,
-                name: m.milestone_name,
-                plannedDate: m.date_yyyy_mm_dd,
+                name: m.milestone_name || m.name || `Milestone ${index + 1}`,
+                plannedDate: m.date_yyyy_mm_dd || m.date || new Date().toISOString().split('T')[0],
                 status: 'Planned',
-            }));
+            })).filter(m => m.name && m.plannedDate);
     
             handleSave({ tasks: newTasks, milestones: newMilestones });
             logAction('Plan Parsing Success', project.name, { taskCount: newTasks.length, milestoneCount: newMilestones.length });

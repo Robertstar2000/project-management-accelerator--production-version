@@ -142,7 +142,7 @@ export const PhaseCard: React.FC<PhaseCardProps> = ({ phase, project, phaseData,
                     )}
                     
                     <div className="phase-actions">
-                        <button className="button" onClick={() => onGenerate(phase.id, editedContent)} onMouseDown={(e) => e.preventDefault()} disabled={isLoading || status === 'completed'}>
+                        <button className="button" onClick={() => onGenerate(phase.id, editedContent)} onMouseDown={(e) => e.preventDefault()} disabled={isLoading}>
                             {getButtonText()}
                         </button>
                         {phase.originalPhaseId === 'phase1' && (

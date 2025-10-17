@@ -165,29 +165,29 @@ ${context}
 ${teamSizeInstruction}
 ${complexityInstruction}
 
-CRITICAL PARALLEL TASK SCHEDULING RULES:
-- Tasks CAN run in parallel UNLESS they meet these criteria:
-  1. Review tasks (e.g., "Sprint Plan Review", "Critical Design Review") MUST be sequential and cannot overlap with other tasks
-  2. Tasks assigned to the SAME role CANNOT run in parallel
-  3. Tasks with dependencies MUST wait for their dependencies to complete
-- Tasks that will be completed by AI agents (non-physical work like documentation, analysis, planning) should be scheduled with ONLY 1 day of elapsed time
-- Physical tasks (construction, manufacturing, testing with equipment) should use realistic durations based on the work required
-- When scheduling, maximize parallelization by assigning independent tasks to different roles at the same time
-- Example: If "Design UI" (Designer, 3 days) and "Setup Database" (Developer, 2 days) have no dependencies, they should START on the same date
+CRITICAL TASK SCHEDULING RULES:
+- Tasks MUST be scheduled sequentially (one after another) based on dependencies
+- ONLY tasks assigned to DIFFERENT roles with NO dependencies between them can run in parallel
+- Review tasks MUST be sequential and cannot overlap with any other tasks
+- Tasks assigned to the SAME role MUST be scheduled one after another (cannot overlap)
+- Each task MUST start after its dependencies complete
+- Use dependencies to control task sequencing - if tasks should run in series, make one depend on the other
+- Tasks that will be completed by AI agents (documentation, analysis, planning) should have 1 day duration
+- Physical tasks should have realistic durations based on work required
 
 CRITICAL INSTRUCTIONS FOR PARSING AND CONTENT:
 1.  **Project Start Date**: The entire project plan MUST begin on or after ${projectStartDate}. All task and milestone dates must be relative to this start date.
-2.  **Dates**: All dates in the "Start Date" and "End Date" columns for both Tasks and Milestones MUST be in the exact "YYYY-MM-DD" format. Do not use any other format (e.g., "August 1st, 2024"). The dates MUST be valid and sequential.
-3.  **Duration**: The "Tasks" table MUST include a "Duration (days)" column. This value must be correctly calculated as the number of calendar days from the Start Date to the End Date, inclusive.
-4.  **Roles**: The "Role" for each task MUST be selected from the roles defined in the "Resources & Skills List" document provided in the context above. Do not invent new roles. If no specific roles are in the context, infer standard roles for the discipline.
-5.  **Dependencies**: The "Dependencies" column must contain the exact "Task Name" of one or more preceding tasks, separated by commas, or be empty.
-6.  **Markdown Format**: Adhere strictly to the Markdown table format for Tasks and Milestones, and a bulleted list for the WBS. A valid table MUST have a header row and a separator row (e.g., |---|---:|).
-7.  **Discipline-Specific Content**: All generated content, including WBS items, tasks, and milestones, must use professional, industry-standard terminology and conventions specific to the '${discipline}' field.
-8.  **Sprints**: ${sprintInstruction}
-9.  **Sprint Duration**: The duration of each sprint, from the start date of its first task to the end date of its last task, MUST be between 7 and 14 days.
-10. **Logical Dependencies**: A task's "Dependencies" must ONLY list tasks that appear earlier in the table.
-11. **Required Milestones**: The "Milestones" table MUST include the following specific milestones, with their dates estimated logically based on the task schedule you create: 'Project Start', 'Preliminary Design Review Complete', milestones for each Sprint's completion (e.g., 'Sprint 1 Complete', 'Sprint 2 Complete'), 'Critical Design Review Complete', and 'Project Completion'. You may add other relevant milestones for the discipline as well.
-12. **No Commentary**: Your entire response must consist ONLY of the "## WBS", "## Tasks", and "## Milestones" sections. Do not include any introductory or concluding sentences.
+2.  **Date Format REQUIRED**: All dates MUST be in exact "YYYY-MM-DD" format (e.g., 2024-08-15). This is MANDATORY for parsing. Do NOT use any other format.
+3.  **Duration**: The "Tasks" table MUST include a "Duration (days)" column calculated as calendar days from Start Date to End Date, inclusive.
+4.  **Roles**: The "Role" for each task MUST be selected from roles in the "Resources & Skills List" document. Do not invent new roles.
+5.  **Dependencies**: The "Dependencies" column must contain exact "Task Name" of preceding tasks, separated by commas, or be empty. Use dependencies to enforce sequential execution.
+6.  **Markdown Format REQUIRED**: Tables MUST have header row and separator row (|---|---|). This is MANDATORY for parsing.
+7.  **Milestones Table Format**: The Milestones table MUST have columns "Milestone Name" and "Date (YYYY-MM-DD)" - these exact column names are REQUIRED for parsing.
+8.  **Discipline-Specific Content**: All content must use professional terminology specific to '${discipline}'.
+9.  **Sprints**: ${sprintInstruction}
+10. **Sprint Duration**: Each sprint MUST be 7-14 days from first task start to last task end.
+11. **Required Milestones**: MUST include: 'Project Start', 'Preliminary Design Review Complete', 'Sprint 1 Complete', 'Sprint 2 Complete' (etc for all sprints), 'Critical Design Review Complete', 'Project Completion'.
+12. **No Commentary**: Output ONLY "## WBS", "## Tasks", and "## Milestones" sections.
 
 The task list MUST include several formal review tasks, such as "Sprint Plan Review" and "Critical Design Review", at appropriate points in the timeline. All dates must be sequential and logical. ${subcontractorInstruction}
 
@@ -200,7 +200,7 @@ Create a Work Breakdown Structure as a multi-level bulleted list. The tasks in t
 Create a detailed task list in a Markdown table with the columns: ${subcontractorColumns}. The tasks must be in chronological order.
 
 ## Milestones
-Create a list of key milestones in a Markdown table with the columns: "Milestone Name", "Date (YYYY-MM-DD)".
+Create a Markdown table with EXACTLY these column headers: "Milestone Name" and "Date (YYYY-MM-DD)". These exact names are REQUIRED for parsing. All dates MUST be in YYYY-MM-DD format.
 `;
     },
     phase8_sprintRequirements: (name, discipline, context, mode = 'fullscale', scope = 'internal', teamSize = 'medium', complexity = 'typical') => {

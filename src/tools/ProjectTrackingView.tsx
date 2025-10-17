@@ -774,6 +774,38 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
                 </div>
             )}
             <div className="tracking-view-header">
+                {trackingView === 'Timeline' && (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <button 
+                            className="button" 
+                            onClick={() => {
+                                if (window.confirm('This will recreate all tasks and milestones from the planning documents. Current tracking data will be lost. Continue?')) {
+                                    onUpdateProject({ tasks: [], milestones: [] });
+                                    setTimeout(() => window.location.reload(), 100);
+                                }
+                            }}
+                        >
+                            Recreate Tracking Data
+                        </button>
+                        <span style={{ marginLeft: '1rem', fontSize: '0.85rem', color: 'var(--secondary-text)' }}>Use this if you regenerated planning documents</span>
+                    </div>
+                )}
+                {(trackingView === 'Team' || trackingView === 'Resources') && (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <button 
+                            className="button" 
+                            onClick={() => {
+                                if (window.confirm('This will recreate team roles and resources from the Resources & Skills document. Current data will be lost. Continue?')) {
+                                    onUpdateProject({ resources: [], team: [] });
+                                    setTimeout(() => window.location.reload(), 100);
+                                }
+                            }}
+                        >
+                            Recreate Team/Resources Data
+                        </button>
+                        <span style={{ marginLeft: '1rem', fontSize: '0.85rem', color: 'var(--secondary-text)' }}>Use this if you regenerated Resources & Skills document</span>
+                    </div>
+                )}
                 <div className="tracking-view-tabs">
                     {viewOrder.map(viewName => (
                         <button
