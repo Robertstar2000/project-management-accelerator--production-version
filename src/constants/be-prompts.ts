@@ -165,6 +165,16 @@ ${context}
 ${teamSizeInstruction}
 ${complexityInstruction}
 
+CRITICAL PARALLEL TASK SCHEDULING RULES:
+- Tasks CAN run in parallel UNLESS they meet these criteria:
+  1. Review tasks (e.g., "Sprint Plan Review", "Critical Design Review") MUST be sequential and cannot overlap with other tasks
+  2. Tasks assigned to the SAME role CANNOT run in parallel
+  3. Tasks with dependencies MUST wait for their dependencies to complete
+- Tasks that will be completed by AI agents (non-physical work like documentation, analysis, planning) should be scheduled with ONLY 1 day of elapsed time
+- Physical tasks (construction, manufacturing, testing with equipment) should use realistic durations based on the work required
+- When scheduling, maximize parallelization by assigning independent tasks to different roles at the same time
+- Example: If "Design UI" (Designer, 3 days) and "Setup Database" (Developer, 2 days) have no dependencies, they should START on the same date
+
 CRITICAL INSTRUCTIONS FOR PARSING AND CONTENT:
 1.  **Project Start Date**: The entire project plan MUST begin on or after ${projectStartDate}. All task and milestone dates must be relative to this start date.
 2.  **Dates**: All dates in the "Start Date" and "End Date" columns for both Tasks and Milestones MUST be in the exact "YYYY-MM-DD" format. Do not use any other format (e.g., "August 1st, 2024"). The dates MUST be valid and sequential.

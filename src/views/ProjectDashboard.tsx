@@ -498,11 +498,29 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             notifications: [...(prevData.notifications || []), ...newNotifications]
         }));
         
-        // Send email notifications if task was completed
+        // Send email notifications and trigger agent workflows if task was completed
         if (updatedTaskData.status === 'done' && previousStatus !== 'done') {
             const updatedTask = updatedTasks.find(t => t.id === taskId);
             if (updatedTask) {
                 await checkAndSendTaskNotifications(updatedTask, updatedTasks, projectData);
+                
+                // Check for agent-enabled tasks that are now ready
+                const dependentTasks = updatedTasks.filter(t => 
+                    t.useAgent && t.agentStatus !== 'running' && t.agentStatus !== 'completed' &&
+                    t.dependsOn?.includes(taskId) && t.status !== 'done'
+                );
+                
+                for (const depTask of dependentTasks) {
+                    const allDepsComplete = depTask.dependsOn.every(depId => {
+                        const dep = updatedTasks.find(t => t.id === depId);
+                        return dep?.status === 'done';
+                    });
+                    
+                    if (allDepsComplete) {
+                        // Trigger agent workflow via custom event
+                        window.dispatchEvent(new CustomEvent('triggerAgentWorkflow', { detail: { taskId: depTask.id } }));
+                    }
+                }
             }
         }
     }, [projectData, handleSave]);

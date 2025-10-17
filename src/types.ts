@@ -53,6 +53,7 @@ export interface Task {
     };
     useAgent?: boolean;
     agentStatus?: 'idle' | 'running' | 'completed' | 'failed';
+    isAgentTask?: boolean;
 }
 
 export interface Notification {

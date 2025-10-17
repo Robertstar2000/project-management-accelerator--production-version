@@ -81,7 +81,7 @@ const ResourcesView = ({ project, onUpdateProject }) => {
 const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) => {
     if (!tasks || tasks.length === 0) return <p>Tasks will be populated here once planning is complete.</p>;
     
-    const canUseAgent = (task: Task) => {
+    const isTaskReady = (task: Task) => {
         if (!task.dependsOn || task.dependsOn.length === 0) return true;
         return task.dependsOn.every(depId => {
             const depTask = tasks.find(t => t.id === depId);
@@ -97,7 +97,8 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) 
             <tbody>
                 {tasks.map(task => {
                     const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
-                    const agentEnabled = canUseAgent(task);
+                    const taskReady = isTaskReady(task);
+                    const isPending = task.useAgent && !taskReady;
                     return (
                         <tr key={task.id} className={isOverdue ? 'task-row-overdue' : ''}>
                             <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>
@@ -113,13 +114,14 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) 
                                 <input 
                                     type="checkbox" 
                                     checked={task.useAgent || false}
-                                    disabled={!agentEnabled || task.agentStatus === 'running'}
+                                    disabled={task.agentStatus === 'running'}
                                     onChange={(e) => {
                                         e.stopPropagation();
                                         onToggleAgent(task.id, e.target.checked);
                                     }}
-                                    title={!agentEnabled ? 'Complete dependencies first' : task.agentStatus === 'running' ? 'Agent is running' : 'Use AI agent to complete this task'}
+                                    title={task.agentStatus === 'running' ? 'Agent is running' : 'Use AI agent to complete this task'}
                                 />
+                                {isPending && <span style={{ marginLeft: '4px' }} title="Waiting for dependencies">⏱️</span>}
                                 {task.agentStatus === 'running' && <span style={{ marginLeft: '4px' }}>⏳</span>}
                                 {task.agentStatus === 'completed' && <span style={{ marginLeft: '4px' }}>✅</span>}
                                 {task.agentStatus === 'failed' && <span style={{ marginLeft: '4px' }}>❌</span>}
@@ -558,6 +560,19 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
         const savedView = localStorage.getItem(`hmap-tracking-view-${project.id}`);
         if (savedView) setTrackingView(savedView);
     }, [project.id]);
+    
+    useEffect(() => {
+        const handleAgentTrigger = (event: CustomEvent) => {
+            const { taskId } = event.detail;
+            const task = project.tasks.find(t => t.id === taskId);
+            if (task && task.useAgent) {
+                runAgentWorkflow(taskId, task);
+            }
+        };
+        
+        window.addEventListener('triggerAgentWorkflow', handleAgentTrigger as EventListener);
+        return () => window.removeEventListener('triggerAgentWorkflow', handleAgentTrigger as EventListener);
+    }, [project.tasks, ai, currentUser, onUpdateProject, onUpdateTask]);
 
     const handleViewChange = (view) => {
         setTrackingView(view);
@@ -647,61 +662,88 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
         if (!task) return;
         
         if (enabled) {
-            // Update task to show agent is running
+            // Mark task as using agent
             onUpdateProject({
                 tasks: project.tasks.map(t => 
-                    t.id === taskId ? { ...t, useAgent: true, agentStatus: 'running' as const } : t
+                    t.id === taskId ? { ...t, useAgent: true } : t
                 )
             });
             
-            setAgentProgress({ agent: 'System', iteration: 0, preview: 'Starting agent workflow...' });
+            // Check if task is ready to run
+            const isReady = !task.dependsOn || task.dependsOn.length === 0 || task.dependsOn.every(depId => {
+                const dep = project.tasks.find(t => t.id === depId);
+                return dep?.status === 'done';
+            });
             
-            const result = await runAgenticWorkflow(
-                ai,
-                task,
-                project,
-                (message) => setAgentProgress(message),
-                (title, content) => {
-                    // Add document to project
-                    const newDocId = `doc-agent-${Date.now()}`;
-                    const newDoc = {
-                        id: newDocId,
-                        title,
-                        version: 'v1.0',
-                        status: 'Working',
-                        owner: currentUser.username,
-                        phase: 8,
-                        sequence: 999
-                    };
-                    
-                    onUpdateProject({
-                        documents: [...project.documents, newDoc],
-                        phasesData: {
-                            ...project.phasesData,
-                            [newDocId]: { content, attachments: [] }
-                        }
-                    });
-                }
-            );
-            
-            if (result.success) {
-                onUpdateTask(taskId, { agentStatus: 'completed', status: 'done' }, task.status);
-                setAgentProgress(null);
-            } else {
-                onUpdateProject({
-                    tasks: project.tasks.map(t => 
-                        t.id === taskId ? { ...t, agentStatus: 'failed' as const } : t
-                    )
-                });
-                setAgentProgress(null);
-                alert(result.error || 'Agent workflow failed');
+            if (isReady) {
+                // Start agent immediately
+                await runAgentWorkflow(taskId, task);
             }
+            // Otherwise, agent will start when dependencies complete
         } else {
             onUpdateProject({
                 tasks: project.tasks.map(t => 
                     t.id === taskId ? { ...t, useAgent: false, agentStatus: 'idle' as const } : t
                 )
             });
+        }
+    };
+    
+    const runAgentWorkflow = async (taskId: string, task: Task) => {
+        onUpdateProject({
+            tasks: project.tasks.map(t => 
+                t.id === taskId ? { ...t, agentStatus: 'running' as const } : t
+            )
+        });
+        
+        setAgentProgress({ agent: 'System', iteration: 0, preview: 'Starting agent workflow...' });
+        
+        const result = await runAgenticWorkflow(
+            ai,
+            task,
+            project,
+            (message) => setAgentProgress(message),
+            (title, content) => {
+                // Add document to project
+                const newDocId = `doc-agent-${Date.now()}`;
+                const newDoc = {
+                    id: newDocId,
+                    title,
+                    version: 'v1.0',
+                    status: 'Working',
+                    owner: currentUser.username,
+                    phase: 8,
+                    sequence: 999
+                };
+                
+                onUpdateProject({
+                    documents: [...project.documents, newDoc],
+                    phasesData: {
+                        ...project.phasesData,
+                        [newDocId]: { content, attachments: [] }
+                    }
+                });
+                
+                // Send completion email with agent output
+                const assignedMember = project.team.find(m => m.role === task.role);
+                if (assignedMember?.sendNotifications && assignedMember.email) {
+                    const { sendAgentCompleteEmail } = require('../utils/emailService');
+                    sendAgentCompleteEmail(task, assignedMember, project, content);
+                }
+            }
+        );
+        
+        if (result.success) {
+            onUpdateTask(taskId, { agentStatus: 'completed', status: 'done' }, task.status);
+            setAgentProgress(null);
+        } else {
+            onUpdateProject({
+                tasks: project.tasks.map(t => 
+                    t.id === taskId ? { ...t, agentStatus: 'failed' as const } : t
+                )
+            });
+            setAgentProgress(null);
+            alert(result.error || 'Agent workflow failed');
         }
     };
 
