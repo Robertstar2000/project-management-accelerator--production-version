@@ -1,11 +1,12 @@
 
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Hero } from '../components/Hero';
 import { ApiKeyManager } from '../components/ApiKeyManager';
 import { ProjectList } from '../hmap/ProjectList';
 import { MyWorkView } from '../components/MyWorkView';
 import { RecentlyViewed } from '../components/RecentlyViewed';
+import { TermsModal } from '../components/TermsModal';
 import { Project, Task, User } from '../types';
 
 const Instructions = () => (
@@ -38,6 +39,8 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ projects, onSelectProject, onNewProject, apiKeyStatus, onSetUserKey, disabled, onRequestDelete, currentUser, onSelectTask, recentlyViewedProjects }) => {
+    const [isTermsOpen, setIsTermsOpen] = useState(false);
+    
     return (
         <>
             {projects.length === 0 ? (
@@ -73,6 +76,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ projects, onSelectProj
                     onRequestDelete={onRequestDelete}
                 />
             ) : null}
+            
+            <div style={{ textAlign: 'center', padding: '2rem 0', borderTop: '1px solid var(--border-color)', marginTop: '3rem' }}>
+                <button onClick={() => setIsTermsOpen(true)} className="button" style={{ fontSize: '0.9rem' }}>
+                    Terms of Service & Privacy Policy
+                </button>
+            </div>
+            
+            <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
         </>
     );
 };

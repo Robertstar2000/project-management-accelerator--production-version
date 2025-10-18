@@ -9,13 +9,14 @@ interface HeaderProps {
     isLandingPage: boolean;
     currentUser: User;
     onLogout: () => void;
+    onOpenAccountSettings: () => void;
     notifications: Notification[];
     onNotificationClick: (notification: Notification) => void;
     onMarkAllRead: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
-    onNewProject, onHomeClick, disabled, isLandingPage, currentUser, onLogout, 
+    onNewProject, onHomeClick, disabled, isLandingPage, currentUser, onLogout, onOpenAccountSettings,
     notifications = [], onNotificationClick, onMarkAllRead 
 }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -66,6 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
                             )}
                         </div>
                         <span>{currentUser.username}</span>
+                        <button onClick={onOpenAccountSettings} className="button button-small">Account</button>
                         <button onClick={onLogout} className="button button-small">Logout</button>
                     </div>
                 )}

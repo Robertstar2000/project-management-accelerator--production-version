@@ -10,10 +10,12 @@ import { NewProjectModal } from './components/NewProjectModal';
 import { UpgradeModal } from './components/UpgradeModal';
 import { DeleteProjectConfirmationModal } from './components/DeleteProjectConfirmationModal';
 import { HelpModal } from './components/HelpModal';
+import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { GlobalStyles } from './styles/GlobalStyles';
 import { DEFAULT_SPRINTS, TEMPLATES, DEFAULT_DOCUMENTS } from './constants/projectData';
 import { logAction } from './utils/logging';
 import { AuthView } from './views/AuthView';
+import { ResetPasswordView } from './views/ResetPasswordView';
 import * as authService from './utils/authService';
 import { subscribeToUpdates, notifyUpdate } from './utils/syncService';
 // FIX: Import Notification type to satisfy HeaderProps.
@@ -30,9 +32,11 @@ const App = () => {
   const [apiKeyStatus, setApiKeyStatus] = useState('pending');
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
   const [appKey, setAppKey] = useState(0);
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [userLimits, setUserLimits] = useState({ projectLimit: 3, projectCount: 0 });
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
   const userProjects = useMemo(() => {
     if (!projects || !currentUser) return [];
@@ -129,6 +133,15 @@ const App = () => {
         alert('The provided API Key appears to be invalid. Please check it and try again.');
     }
   }, [initializeAi, currentUser]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setResetToken(token);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -430,6 +443,11 @@ const App = () => {
     setRecentlyViewedIds([]);
   }, []);
 
+  const handleAccountDeleted = useCallback(() => {
+    setIsAccountSettingsOpen(false);
+    handleLogout();
+  }, [handleLogout]);
+
   useEffect(() => {
     if (currentUser) {
       fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/user/${currentUser.id}/limits`)
@@ -443,7 +461,9 @@ const App = () => {
     <>
         <style>{GlobalStyles}</style>
 
-        {!currentUser ? (
+        {resetToken ? (
+            <ResetPasswordView token={resetToken} onSuccess={() => setResetToken(null)} />
+        ) : !currentUser ? (
             <AuthView onLogin={(user) => setCurrentUser(user)} />
         ) : (
             <>
@@ -454,6 +474,7 @@ const App = () => {
                     isLandingPage={!selectedProject}
                     currentUser={currentUser}
                     onLogout={handleLogout}
+                    onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
                     notifications={selectedProject?.notifications || []}
                     onNotificationClick={handleNotificationClick}
                     onMarkAllRead={handleMarkAllRead}
@@ -512,11 +533,29 @@ const App = () => {
                     currentCount={userLimits.projectCount}
                     limit={userLimits.projectLimit}
                 />
+                
+                <AccountSettingsModal
+                    isOpen={isAccountSettingsOpen}
+                    onClose={() => setIsAccountSettingsOpen(false)}
+                    currentUser={currentUser}
+                    onAccountDeleted={handleAccountDeleted}
+                />
             </>
         )}
         
         <button className="help-fab" onClick={() => handleToggleHelpModal(true)} aria-label="Open Help">?</button>
         <HelpModal isOpen={isHelpModalOpen} onClose={() => handleToggleHelpModal(false)} />
+        
+        <footer style={{ textAlign: 'center', padding: '2rem 1rem', borderTop: '1px solid var(--border-color)', marginTop: '3rem', fontSize: '0.9rem' }}>
+            Project Accelerator Application Created by <span style={{ fontWeight: 'bold' }}>
+                <span style={{ color: '#FF6B6B' }}>M</span>
+                <span style={{ color: '#4ECDC4' }}>I</span>
+                <span style={{ color: '#FFE66D' }}>F</span>
+                <span style={{ color: '#95E1D3' }}>E</span>
+                <span style={{ color: '#F38181' }}>C</span>
+                <span style={{ color: '#AA96DA' }}>O</span>
+            </span> ©2025
+        </footer>
     </>
   );
 };

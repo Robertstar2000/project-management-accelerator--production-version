@@ -13,7 +13,7 @@ export const Hero = ({ onStart, disabled }) => (
     <div style={{ maxWidth: '800px', margin: '0 auto 2rem', padding: '1.5rem', background: 'var(--card-background)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
       <h3 style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>Flexible Pricing Plans</h3>
       <p style={{ fontSize: '0.95rem', color: 'var(--secondary-text)', marginBottom: '1rem' }}>
-        Start with 3 free projects. Need more? Choose a plan that fits your needs:
+        Start with <strong style={{ color: 'var(--accent-color)', fontSize: '1.1rem' }}>3 FREE PROJECTS</strong>. Need more? Choose a plan that fits your needs:
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', textAlign: 'left' }}>
         <div>

@@ -47,3 +47,32 @@ export const getCurrentUser = (): User | null => {
         return null;
     }
 };
+
+export const requestPasswordReset = async (email: string): Promise<boolean> => {
+    try {
+        const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
+};
+
+export const deleteAccount = async (userId: string): Promise<boolean> => {
+    try {
+        const response = await fetch(`${API_URL}/api/auth/delete-account/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+            logout();
+            return true;
+        }
+        return false;
+    } catch {
+        return false;
+    }
+};

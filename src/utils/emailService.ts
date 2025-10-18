@@ -40,9 +40,20 @@ Best regards,
 Project Management Accelerator
     `.trim();
     
-    console.log('Agent Start Email would be sent to:', assignedMember.email);
-    console.log('Subject:', `AI Agent Starting: ${task.name}`);
-    console.log('Body:', emailBody);
+    try {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: assignedMember.email,
+                subject: `AI Agent Starting: ${task.name}`,
+                body: emailBody.replace(/\n/g, '<br>')
+            })
+        });
+        console.log('Agent start email sent to:', assignedMember.email);
+    } catch (error) {
+        console.error('Failed to send agent start email:', error);
+    }
 };
 
 export const sendAgentCompleteEmail = async (
@@ -83,9 +94,20 @@ Best regards,
 Project Management Accelerator
     `.trim();
     
-    console.log('Agent Complete Email would be sent to:', assignedMember.email);
-    console.log('Subject:', `AI Agent Completed: ${task.name} - Review Required`);
-    console.log('Body:', emailBody);
+    try {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: assignedMember.email,
+                subject: `AI Agent Completed: ${task.name} - Review Required`,
+                body: emailBody.replace(/\n/g, '<br>')
+            })
+        });
+        console.log('Agent complete email sent to:', assignedMember.email);
+    } catch (error) {
+        console.error('Failed to send agent complete email:', error);
+    }
 };
 
 export const sendTaskReadyEmail = async (
@@ -126,24 +148,20 @@ Best regards,
 Project Management Accelerator
     `.trim();
     
-    // In a real implementation, this would call an email API
-    // For now, we'll log it and show a console message
-    console.log('Email would be sent to:', assignedMember.email);
-    console.log('Subject:', `Task Ready: ${task.name}`);
-    console.log('Body:', emailBody);
-    
-    // Simulate email sending
-    // In production, integrate with services like SendGrid, AWS SES, or similar
-    // await fetch('/api/send-email', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({
-    //         to: assignedMember.email,
-    //         subject: `Task Ready: ${task.name}`,
-    //         body: emailBody,
-    //         attachments: [{ filename: 'phase1.txt', content: phase1Content }]
-    //     })
-    // });
+    try {
+        await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: assignedMember.email,
+                subject: `Task Ready: ${task.name}`,
+                body: emailBody.replace(/\n/g, '<br>')
+            })
+        });
+        console.log('Task ready email sent to:', assignedMember.email);
+    } catch (error) {
+        console.error('Failed to send task ready email:', error);
+    }
 };
 
 export const checkAndSendTaskNotifications = async (

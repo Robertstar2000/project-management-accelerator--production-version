@@ -16,3 +16,11 @@ export const logout = (): void => {
 export const getCurrentUser = (): User | null => {
     return backendAuth.getCurrentUser();
 };
+
+export const requestPasswordReset = async (email: string): Promise<boolean> => {
+    return await backendAuth.requestPasswordReset(email);
+};
+
+export const deleteAccount = async (userId: string): Promise<boolean> => {
+    return await backendAuth.deleteAccount(userId);
+};
