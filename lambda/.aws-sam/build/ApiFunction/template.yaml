@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        AWS_BEDROCK_REGION: us-east-1
+        AWS_BEDROCK_ACCESS_KEY: AKIASQXLXTBWOAPEKHF3
+        AWS_BEDROCK_SECRET_KEY: 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
+        JWT_SECRET: 8f3a9c2e7b1d4f6a5e8c9b2d7f4a6e1c3b5d8f2a9c7e4b6d1f3a8c5e7b9d2f4a
+        STRIPE_SECRET_KEY: sk_test_51RYHVjLFWluMTxK7exQY5vdrqG0FW3w3XqrCdFdQ4aWgQ0BiKpGsSWa5vnnFtBcTkXHBsn1fXUJEQEvhvHWgPwwW00FFHGna87
+        STRIPE_WEBHOOK_SECRET: sk_test_51RYHVjLFWluMTxK7exQY5vdrqG0FW3w3XqrCdFdQ4aWgQ0BiKpGsSWa5vnnFtBcTkXHBsn1fXUJEQEvhvHWgPwwW00FFHGna87
+        DEFAULT_PROJECT_LIMIT: '3'
+        BACKDOOR_USER_EMAIL: mifecoinc@gmail.com
+        FRONTEND_URL: http://localhost:5173
+        AWS_SES_REGION: us-east-1
+        FROM_EMAIL: WEBMAIL@mifeco.com
+        AWS_SES_FROM_EMAIL: WEBMAIL@mifeco.com
+        USERS_TABLE: !Ref UsersTable
+        TOKENS_TABLE: !Ref TokensTable
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.handler
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - bedrock:InvokeModel
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - ses:SendEmail
+              - ses:SendRawEmail
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:Scan
+              - dynamodb:Query
+            Resource:
+              - !GetAtt UsersTable.Arn
+              - !GetAtt TokensTable.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: project-management-users
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  TokensTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: project-management-reset-tokens
+      AttributeDefinitions:
+        - AttributeName: token
+          AttributeType: S
+      KeySchema:
+        - AttributeName: token
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/'
+  UsersTableName:
+    Description: DynamoDB Users Table
+    Value: !Ref UsersTable
+  TokensTableName:
+    Description: DynamoDB Tokens Table
+    Value: !Ref TokensTable

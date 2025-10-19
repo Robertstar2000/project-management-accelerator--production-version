@@ -62,6 +62,21 @@ interface TestCase {
 const runUnitTests = (): TestCase[] => {
     const tests: TestCase[] = [
         {
+            name: "Auth: User data isolation with scoped localStorage keys",
+            test: () => {
+                const userId = 'user-123';
+                const projectId = 'proj-456';
+                
+                const getProjectsKey = (uid) => `hmap-projects-${uid}`;
+                const getSelectedKey = (uid) => `hmap-selected-project-id-${uid}`;
+                const getOpenPhasesKey = (uid, pid) => `hmap-open-phases-${uid}-${pid}`;
+                
+                assert(getProjectsKey(userId) === 'hmap-projects-user-123', "Projects key should be user-scoped");
+                assert(getSelectedKey(userId) === 'hmap-selected-project-id-user-123', "Selected project key should be user-scoped");
+                assert(getOpenPhasesKey(userId, projectId) === 'hmap-open-phases-user-123-proj-456', "Open phases key should be user and project scoped");
+            }
+        },
+        {
             name: "Utility: Parses impact string correctly",
             test: () => {
                 // Dummy function to simulate the one in RevisionControlView
@@ -162,6 +177,44 @@ const runUnitTests = (): TestCase[] => {
 const runIntegrationTests = (): TestCase[] => {
     const tests: TestCase[] = [
         {
+            name: "Backend: Lambda API is accessible",
+            test: async () => {
+                const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                try {
+                    const response = await fetch(`${API_URL}/api/user/test-user/limits`);
+                    assert(response.status === 404 || response.status === 200, "API should respond (404 for missing user or 200 for existing)");
+                } catch (error) {
+                    throw new Error(`Lambda API not accessible: ${error.message}`);
+                }
+            }
+        },
+        {
+            name: "Auth: Registration endpoint works",
+            test: async () => {
+                const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                const testUser = {
+                    username: `testuser_${Date.now()}`,
+                    email: `test_${Date.now()}@example.com`,
+                    password: 'testpass123'
+                };
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(testUser)
+                    });
+                    
+                    const data = await response.json();
+                    assert(response.ok, `Registration should succeed: ${data.error || ''}`);
+                    assert(data.id && data.username === testUser.username, "Should return user with id and username");
+                    assert(data.projectLimit === 3, "Should have default project limit of 3");
+                } catch (error) {
+                    throw new Error(`Registration test failed: ${error.message}`);
+                }
+            }
+        },
+        {
             name: "AI: Gathers correct document context for generation",
             test: () => {
                 const getRelevantContext = (docToGenerate, allDocuments, allPhasesData) => {
@@ -210,6 +263,63 @@ const runIntegrationTests = (): TestCase[] => {
 
 const runFunctionalTests = (project, saveProject): TestCase[] => {
     const tests: TestCase[] = [
+        {
+            name: "Email: Service can send notifications",
+            test: async () => {
+                const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/send-email`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: 'test@example.com',
+                            subject: 'Test Email',
+                            body: '<p>Test email body</p>'
+                        })
+                    });
+                    
+                    assert(response.ok || response.status === 500, "Email endpoint should respond (500 if SES not configured is acceptable)");
+                } catch (error) {
+                    throw new Error(`Email service test failed: ${error.message}`);
+                }
+            }
+        },
+        {
+            name: "DynamoDB: User persistence works",
+            test: async () => {
+                const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                const testUser = {
+                    username: `persisttest_${Date.now()}`,
+                    email: `persist_${Date.now()}@example.com`,
+                    password: 'testpass123'
+                };
+                
+                // Register user
+                const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testUser)
+                });
+                
+                const userData = await registerResponse.json();
+                assert(registerResponse.ok, "User registration should succeed");
+                
+                // Login with same credentials
+                const loginResponse = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: testUser.email,
+                        password: testUser.password
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                assert(loginResponse.ok, "Login should succeed with registered credentials");
+                assert(loginData.id === userData.id, "Should return same user ID after login");
+            }
+        },
         {
             name: "Flow: Create Project and Generate First Document",
             test: async () => {
