@@ -2,7 +2,7 @@ export class AWSBedrockService {
   private apiUrl: string;
 
   constructor() {
-    this.apiUrl = 'http://localhost:3001/api/bedrock';
+    this.apiUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/bedrock`;
   }
 
   async generateContent(prompt: string): Promise<string> {
