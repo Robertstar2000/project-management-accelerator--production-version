@@ -95,7 +95,8 @@ const App = () => {
 
   const initializeAwsBedrock = useCallback(async (): Promise<boolean> => {
     try {
-      const testResponse = await fetch('http://localhost:3001/api/bedrock/generate', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const testResponse = await fetch(`${backendUrl}/api/bedrock/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: 'test' })

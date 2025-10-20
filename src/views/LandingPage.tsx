@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { Hero } from '../components/Hero';
-import { ApiKeyManager } from '../components/ApiKeyManager';
 import { ProjectList } from '../hmap/ProjectList';
 import { MyWorkView } from '../components/MyWorkView';
 import { RecentlyViewed } from '../components/RecentlyViewed';
@@ -60,7 +59,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ projects, onSelectProj
                 onRequestDelete={onRequestDelete}
             />
             
-            <ApiKeyManager status={apiKeyStatus} onSetKey={onSetUserKey} />
             <div className="ai-warning-box">
                 Be sure to read and edit AI output to keep the project aligned with your needs. Depending on project complexity, agentic AI generation can take several minutes per step—please be patient.
             </div>
