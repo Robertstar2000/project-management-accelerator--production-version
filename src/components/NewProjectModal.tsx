@@ -74,6 +74,10 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
         if (!template) return;
         onCreateProject({ name, template, mode: projectMode, scope: projectScope, teamSize, complexity: projectComplexity });
     } else {
+        if (!ai) {
+            setError("AI service not initialized. Please wait a moment and try again.");
+            return;
+        }
         setIsGeneratingDocs(true);
         try {
             const prompt = PROMPTS.generateDocumentList(customDiscipline.trim(), projectScope, teamSize, projectComplexity);
