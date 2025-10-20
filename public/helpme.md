@@ -1,6 +1,6 @@
 # Project Management Accelerator
 
-An AI-powered project management companion that guides you through the full lifecycle of a project using the proven **Hyper-Agile Management Process (HMAP)**. This tool automates documentation, accelerates planning, and provides clear visibility into project execution for individuals and teams.
+An AI-powered project management companion that guides you through the full lifecycle of a project using the proven **Human Mediated Agentic Process (HMAP)**. This tool automates documentation, accelerates planning, and provides clear visibility into project execution for individuals and teams.
 
 ## Core Features
 
@@ -88,7 +88,7 @@ Model the impact of potential changes *before* they are approved.
 
 ## Tutorial: The AI-Accelerated HMAP
 
-This tool is built on the **Hyper-Agile Management Process (HMAP)**, a methodology inspired by the rapid, iterative, and first-principles approach used at companies like SpaceX. Its goal is to move from concept to execution as quickly as possible while maintaining rigor and alignment.
+This tool is built on the **Human Mediated Agentic Process (HMAP)**, a methodology that combines human oversight with autonomous AI agents to accelerate project execution. Its goal is to move from concept to execution as quickly as possible while maintaining rigor and alignment through intelligent automation.
 
 **Core HMAP Principles:**
 
