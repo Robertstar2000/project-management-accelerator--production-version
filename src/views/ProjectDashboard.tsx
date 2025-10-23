@@ -14,7 +14,7 @@ import { TaskDetailModal } from '../components/TaskDetailModal';
 import { AiReportModal } from '../components/AiReportModal';
 import { TestingView } from '../tools/TestingView';
 import { parseMarkdownTable } from '../utils/be-logic';
-import { checkAndSendTaskNotifications } from '../utils/emailService';
+import { checkAndSendTaskNotifications, sendDashboardReport } from '../utils/emailService';
 
 async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 5000): Promise<T> {
     let lastError: Error;
@@ -608,6 +608,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || new Date().toISOString().split('T')[0];
                 const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || new Date().toISOString().split('T')[0];
                 
+                const existingTask = projectData.tasks.find(et => et.name.toLowerCase().trim() === taskName.toLowerCase().trim());
+                
                 return {
                     id: taskId,
                     name: taskName,
@@ -615,15 +617,17 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                     startDate: startDate,
                     endDate: endDate,
                     sprintId: sprint ? sprint.id : projectData.sprints[0]?.id || 'sprint1',
-                    status: 'todo',
+                    status: existingTask?.status || 'todo',
                     isSubcontracted: t.subcontractor?.toLowerCase().trim() === 'yes',
                     dependsOn: t.dependencies ? t.dependencies.split(',').map(d => d.trim()) : [],
-                    description: '',
-                    actualTime: null,
-                    actualCost: null,
-                    actualEndDate: null,
-                    comments: [],
-                    attachments: [],
+                    description: existingTask?.description || '',
+                    actualTime: existingTask?.actualTime || null,
+                    actualCost: existingTask?.actualCost || null,
+                    actualEndDate: existingTask?.actualEndDate || null,
+                    comments: existingTask?.comments || [],
+                    attachments: existingTask?.attachments || [],
+                    useAgent: existingTask?.useAgent,
+                    agentStatus: existingTask?.agentStatus,
                 };
             });
     
@@ -741,6 +745,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
             
             setAiReport({ title: 'AI Risk Analysis', content: result.text, isOpen: true });
+            await sendDashboardReport('AI Risk Analysis', result.text, projectData);
         } catch (err) {
             console.error("Error analyzing risks:", err);
             setError("Failed to generate risk analysis. Please try again.");
@@ -766,6 +771,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
 
             setAiReport({ title: 'AI-Generated Project Summary', content: result.text, isOpen: true });
+            await sendDashboardReport('AI-Generated Project Summary', result.text, projectData);
         } catch (err) {
             console.error("Error generating summary:", err);
             setError("Failed to generate project summary. Please try again.");
