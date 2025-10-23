@@ -34,9 +34,8 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         } else {
             newAssignments.push({ role, name: '', email: '', [field]: value, userId: `temp-${Date.now()}` });
         }
-        const filteredAssignments = newAssignments.filter(a => (a.name && a.name.trim() !== '') || (a.email && a.email.trim() !== ''));
-        setTeamAssignments(filteredAssignments);
-        onUpdateTeam(filteredAssignments);
+        setTeamAssignments(newAssignments);
+        onUpdateTeam(newAssignments);
     };
 
     const handleNotificationToggle = (role, checked) => {
@@ -75,9 +74,47 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
     return (
         <div>
              <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>Assign team members to roles. The project owner has full permissions.</p>
-            <table className="task-list-table">
-                <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Send Notifications</th><th>Leadership</th><th>Actions</th></tr></thead>
-                <tbody>
+            <div className="task-list-table-wrapper">
+                <table className="task-list-table">
+                    <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Send Notifications</th><th>Leadership</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    {!extractedRoles.includes('Leadership') && (
+                        <tr key="Leadership" style={{cursor: 'initial'}}>
+                            <td><strong>Leadership</strong></td>
+                            <td>
+                                <input 
+                                    type="text" 
+                                    value={teamAssignments.find(a => a.role === 'Leadership')?.name || ''} 
+                                    onChange={(e) => handleAssignmentChange('Leadership', 'name', e.target.value)} 
+                                />
+                            </td>
+                            <td>
+                                <input 
+                                    type="email" 
+                                    value={teamAssignments.find(a => a.role === 'Leadership')?.email || ''} 
+                                    onChange={(e) => handleAssignmentChange('Leadership', 'email', e.target.value)} 
+                                />
+                            </td>
+                            <td>
+                                <input 
+                                    type="checkbox" 
+                                    checked={teamAssignments.find(a => a.role === 'Leadership')?.sendNotifications || false}
+                                    disabled={!teamAssignments.find(a => a.role === 'Leadership')?.name || !teamAssignments.find(a => a.role === 'Leadership')?.email}
+                                    onChange={(e) => handleNotificationToggle('Leadership', e.target.checked)}
+                                    title="Send email when tasks are ready"
+                                />
+                            </td>
+                            <td>
+                                <input 
+                                    type="checkbox" 
+                                    checked={true}
+                                    disabled={true}
+                                    title="Leadership role automatically receives dashboard reports"
+                                />
+                            </td>
+                            <td></td>
+                        </tr>
+                    )}
                     {extractedRoles.map(role => {
                         const assignment = teamAssignments.find(a => a.role === role) || { name: '', email: '' };
                         const member = project.team.find(m => m.role === role);
@@ -90,10 +127,10 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
                                     {isOwner && <span style={{color: 'var(--accent-color)', marginLeft: '0.5rem', fontSize: '0.85em'}}>(Owner)</span>}
                                 </td>
                                 <td>
-                                    <input type="text" value={assignment.name} onChange={(e) => handleAssignmentChange(role, 'name', e.target.value)} />
+                                    <input type="text" value={assignment.name || ''} onChange={(e) => handleAssignmentChange(role, 'name', e.target.value)} />
                                 </td>
                                 <td>
-                                    <input type="email" value={assignment.email} onChange={(e) => handleAssignmentChange(role, 'email', e.target.value)} />
+                                    <input type="email" value={assignment.email || ''} onChange={(e) => handleAssignmentChange(role, 'email', e.target.value)} />
                                 </td>
                                 <td>
                                     <input 
@@ -121,8 +158,9 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
                             </tr>
                         );
                     })}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

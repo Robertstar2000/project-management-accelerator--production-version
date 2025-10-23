@@ -57,25 +57,27 @@ const ResourcesView = ({ project, onUpdateProject }) => {
     return (
         <div>
             <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>Track estimated vs. actual costs for non-labor resources. The list is auto-populated from the 'Resources & Skills List' document. Changes are saved automatically when you click away from a field.</p>
-            <table className="task-list-table">
-                <thead><tr><th>Resource Name</th><th>Estimated Cost</th><th>Actual Cost</th></tr></thead>
-                <tbody>
-                    {resources.map((resource, index) => (
-                        <tr key={index}>
-                            <td><input type="text" value={resource.name} onChange={(e) => handleUpdate(index, 'name', e.target.value)} onBlur={handleBlur} /></td>
-                            <td><input type="number" value={resource.estimate || ''} onChange={(e) => handleUpdate(index, 'estimate', e.target.value)} onBlur={handleBlur} /></td>
-                            <td><input type="number" value={resource.actual || ''} onChange={(e) => handleUpdate(index, 'actual', e.target.value)} onBlur={handleBlur} /></td>
-                        </tr>
-                    ))}
-                     {resources.length === 0 && (
-                        <tr>
-                            <td colSpan={3} style={{ textAlign: 'center', color: 'var(--secondary-text)' }}>
-                                Resources will be listed here after the 'Resources & Skills List' document is generated.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+            <div className="task-list-table-wrapper">
+                <table className="task-list-table">
+                    <thead><tr><th>Resource Name</th><th>Estimated Cost</th><th>Actual Cost</th></tr></thead>
+                    <tbody>
+                        {resources.map((resource, index) => (
+                            <tr key={index}>
+                                <td><input type="text" value={resource.name} onChange={(e) => handleUpdate(index, 'name', e.target.value)} onBlur={handleBlur} /></td>
+                                <td><input type="number" value={resource.estimate || ''} onChange={(e) => handleUpdate(index, 'estimate', e.target.value)} onBlur={handleBlur} /></td>
+                                <td><input type="number" value={resource.actual || ''} onChange={(e) => handleUpdate(index, 'actual', e.target.value)} onBlur={handleBlur} /></td>
+                            </tr>
+                        ))}
+                         {resources.length === 0 && (
+                            <tr>
+                                <td colSpan={3} style={{ textAlign: 'center', color: 'var(--secondary-text)' }}>
+                                    Resources will be listed here after the 'Resources & Skills List' document is generated.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
@@ -95,11 +97,11 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai, on
     const statuses: Task['status'][] = ['todo', 'inprogress', 'review', 'done'];
     
     return (
-        <>
-        <table className="task-list-table">
-            <thead>
-                <tr><th>Task Name</th><th>Assigned To</th><th>Status</th><th>Due Date</th><th>Use Agent</th></tr>
-            </thead>
+        <div className="task-list-table-wrapper">
+            <table className="task-list-table">
+                <thead>
+                    <tr><th>Task Name</th><th>Assigned To</th><th>Status</th><th>Due Date</th><th>Use Agent</th></tr>
+                </thead>
             <tbody>
                 {tasks.map(task => {
                     const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
@@ -143,9 +145,9 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai, on
                         </tr>
                     );
                 })}
-            </tbody>
-        </table>
-        </>
+                </tbody>
+            </table>
+        </div>
     );
 };
 
@@ -303,35 +305,37 @@ const KanbanBoard = ({ tasks, onUpdateTask, onTaskClick }) => {
     const statuses: Task['status'][] = ['todo', 'inprogress', 'review', 'done'];
 
     const handleStatusChange = (e, task, currentStatus) => {
-        e.stopPropagation(); // prevent opening modal
+        e.stopPropagation();
         const newStatus = e.target.value;
         onUpdateTask(task.id, { status: newStatus }, currentStatus);
     };
 
     return (
-        <div className="kanban-board">
-            {statuses.map(status => (
-                <div key={status} className="kanban-column">
-                    <h4>{status.toUpperCase()}</h4>
-                    {tasks.filter(t => t.status === status).map(task => {
-                        const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
-                        return (
-                             <div key={task.id} className={`kanban-card ${status} ${isOverdue ? 'overdue' : ''}`} onClick={() => onTaskClick(task)}>
-                                {task.isSubcontracted && <span className="subcontractor-label">Sub</span>}
-                                <p><span>{task.name}</span></p>
-                                <select 
-                                    value={task.status} 
-                                    onChange={(e) => handleStatusChange(e, task, status)} 
-                                    className="kanban-status-select"
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    {statuses.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                             </div>
-                        );
-                    })}
-                </div>
-            ))}
+        <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
+            <div className="kanban-board" style={{ minWidth: '800px' }}>
+                {statuses.map(status => (
+                    <div key={status} className="kanban-column">
+                        <h4>{status.toUpperCase()}</h4>
+                        {tasks.filter(t => t.status === status).map(task => {
+                            const isOverdue = task.status !== 'done' && new Date(task.endDate) < new Date();
+                            return (
+                                 <div key={task.id} className={`kanban-card ${status} ${isOverdue ? 'overdue' : ''}`} onClick={() => onTaskClick(task)}>
+                                    {task.isSubcontracted && <span className="subcontractor-label">Sub</span>}
+                                    <p><span>{task.name}</span></p>
+                                    <select 
+                                        value={task.status} 
+                                        onChange={(e) => handleStatusChange(e, task, status)} 
+                                        className="kanban-status-select"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                 </div>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
@@ -361,41 +365,43 @@ const MilestonesView = ({ milestones, tasks, onUpdateMilestone }) => {
     };
 
     return (
-        <table className="milestones-table">
-            <thead>
-                <tr><th>Milestone Name</th><th>Planned Date</th><th>Actual Date</th><th>Status</th><th>Health</th></tr>
-            </thead>
-            <tbody>
-                {milestones.map(m => {
-                    const health = getMilestoneHealth(m);
-                    const calculatedActualDate = getMilestoneActualDate(m);
-                    const displayActualDate = m.actualDate || calculatedActualDate || '';
-                    const isAutoCalculated = !m.actualDate && calculatedActualDate;
-                    return (
-                        <tr key={m.id}>
-                            <td>{m.name}</td>
-                            <td className={m.actualDate ? 'milestone-planned-date' : ''}>{m.plannedDate}</td>
-                            <td>
-                                <input 
-                                    type="date" 
-                                    value={displayActualDate} 
-                                    onChange={e => onUpdateMilestone(m.id, { actualDate: e.target.value, status: e.target.value ? 'Completed' : 'Planned' })} 
-                                    style={{ backgroundColor: isAutoCalculated ? 'var(--background-secondary)' : 'transparent' }}
-                                    title={isAutoCalculated ? 'Auto-calculated from task completion dates' : ''}
-                                />
-                            </td>
-                            <td>
-                                <select value={calculatedActualDate ? 'Completed' : (m.status || 'Planned')} onChange={e => onUpdateMilestone(m.id, { status: e.target.value })}>
-                                    <option>Planned</option>
-                                    <option>Completed</option>
-                                </select>
-                            </td>
-                            <td style={{ color: health.color, fontWeight: 'bold' }}>{health.status}</td>
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </table>
+        <div className="task-list-table-wrapper">
+            <table className="milestones-table">
+                <thead>
+                    <tr><th>Milestone Name</th><th>Planned Date</th><th>Actual Date</th><th>Status</th><th>Health</th></tr>
+                </thead>
+                <tbody>
+                    {milestones.map(m => {
+                        const health = getMilestoneHealth(m);
+                        const calculatedActualDate = getMilestoneActualDate(m);
+                        const displayActualDate = m.actualDate || calculatedActualDate || '';
+                        const isAutoCalculated = !m.actualDate && calculatedActualDate;
+                        return (
+                            <tr key={m.id}>
+                                <td>{m.name}</td>
+                                <td className={m.actualDate ? 'milestone-planned-date' : ''}>{m.plannedDate}</td>
+                                <td>
+                                    <input 
+                                        type="date" 
+                                        value={displayActualDate} 
+                                        onChange={e => onUpdateMilestone(m.id, { actualDate: e.target.value, status: e.target.value ? 'Completed' : 'Planned' })} 
+                                        style={{ backgroundColor: isAutoCalculated ? 'var(--background-secondary)' : 'transparent' }}
+                                        title={isAutoCalculated ? 'Auto-calculated from task completion dates' : ''}
+                                    />
+                                </td>
+                                <td>
+                                    <select value={calculatedActualDate ? 'Completed' : (m.status || 'Planned')} onChange={e => onUpdateMilestone(m.id, { status: e.target.value })}>
+                                        <option>Planned</option>
+                                        <option>Completed</option>
+                                    </select>
+                                </td>
+                                <td style={{ color: health.color, fontWeight: 'bold' }}>{health.status}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
     );
 };
 
@@ -840,7 +846,7 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
                     </button>
                 </div>
             </div>
-            <div>
+            <div style={{ maxWidth: '100%', overflowX: 'auto' }}>
                 {views[trackingView]}
             </div>
         </div>
