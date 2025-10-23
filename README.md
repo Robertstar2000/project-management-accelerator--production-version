@@ -10,7 +10,7 @@
 
 **20x faster project execution • Autonomous AI agents • Zero learning curve**
 
-[Try It Now](http://project-management-app-12847.s3-website-us-east-1.amazonaws.com) • [Watch Video Demo](https://drive.google.com/file/d/1ZXHpEi1TYZrWMuYsIETHrA7XX3Et76OE/view?usp=drive_link) • [Documentation](https://docs.google.com/presentation/d/1siUPQY2fyrN2VYIEpauI-XdArfKg9Kow/edit?usp=drive_link&ouid=118353001451134285194&rtpof=true&sd=true)
+[Try It Now](http://project-management-app-12847.s3-website-us-east-1.amazonaws.com) • [Watch Video Demo](https://drive.google.com/file/d/1ZXHpEi1TYZrWMuYsIETHrA7XX3Et76OE/view?usp=drive_link) • [Documentation](https://drive.google.com/file/d/1Srt4d5fLzRMavlqpNYPNgIQajBA9nZfQ/view?usp=sharing)
 
 </div>
 

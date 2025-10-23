@@ -54,7 +54,7 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
         return <p>Workload view will be available once tasks are generated.</p>;
     }
 
-    if (extractedRoles.length === 0) {
+    if (extractedRoles.length === 0 && !team.some(m => m.role === 'Leadership')) {
         return (
             <div>
                 <p>Workload view requires roles to be defined in the 'Resources & Skills List' document.</p>
@@ -65,8 +65,16 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
 
     const projectWeeks = getProjectWeeks(startDate, endDate);
     
+    const allRoles = useMemo(() => {
+        const roles = [...extractedRoles];
+        if (!roles.includes('Leadership')) {
+            roles.unshift('Leadership');
+        }
+        return roles;
+    }, [extractedRoles]);
+
     const workloadData = useMemo(() => {
-        return extractedRoles.map(role => {
+        return allRoles.map(role => {
             const member = team.find(m => m.role === role);
             const roleTasks = tasks.filter(task => task.role === role);
             
@@ -84,11 +92,9 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
                     taskStart.setHours(0, 0, 0, 0);
                     taskEnd.setHours(23, 59, 59, 999);
 
-                    // Check for overlap between task and week
                     if (taskStart <= weekEnd && taskEnd >= weekStart) {
                         tasksInWeek.push(task);
                         
-                        // Calculate workdays of this task within this week, excluding weekends
                         const overlapStart = new Date(Math.max(taskStart.getTime(), weekStart.getTime()));
                         const overlapEnd = new Date(Math.min(taskEnd.getTime(), weekEnd.getTime()));
                         
@@ -118,14 +124,15 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
                 weeklyWorkload,
             };
         });
-    }, [extractedRoles, team, tasks, projectWeeks]);
+    }, [allRoles, team, tasks, projectWeeks]);
 
     return (
-        <div style={{ overflowX: 'auto' }}>
+        <div>
             <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>
                 View task distribution across project roles by week. Each cell shows the total days of work assigned. Colors indicate workload intensity (Green: light, Amber: medium, Red: heavy).
             </p>
-            <table className="task-list-table workload-table">
+            <div className="task-list-table-wrapper">
+                <table className="task-list-table workload-table">
                 <thead>
                     <tr>
                         <th style={{ minWidth: '250px', position: 'sticky', left: 0, background: 'var(--card-background)', zIndex: 1 }}>Role (Team Member)</th>
@@ -164,8 +171,9 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
                             })}
                         </tr>
                     ))}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
             <style>{`
                 .workload-table th, .workload-table td {
                     border: 1px solid var(--border-color);

@@ -136,6 +136,10 @@ export const GlobalStyles = `
     transition: all 0.2s ease-in-out;
   }
   
+  .button:not(.button-primary):not(.button-danger):not([disabled]) {
+    background-color: #2a2a3a;
+  }
+  
   .button[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
@@ -698,15 +702,20 @@ export const GlobalStyles = `
   }
   .dashboard-nav button {
     border: 1px solid var(--secondary-text);
-    background: transparent;
+    background: #2a2a3a;
     padding: 0.5rem 1rem;
     color: var(--secondary-text);
     border-radius: 4px;
+    cursor: pointer;
   }
   .dashboard-nav button.active {
     background: var(--accent-color);
     color: var(--background-color);
     border-color: var(--accent-color);
+  }
+  .dashboard-nav button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   
   /* General Tool Card */
@@ -715,6 +724,8 @@ export const GlobalStyles = `
       padding: 2rem;
       border-radius: 8px;
       border: 1px solid var(--border-color);
+      max-width: 100%;
+      overflow-x: auto;
   }
   .tool-grid {
       display: grid;
@@ -900,16 +911,20 @@ export const GlobalStyles = `
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 1rem;
     margin-bottom: 2rem;
+    max-width: 100%;
+    overflow-x: auto;
   }
   .tracking-view-tabs {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+    min-width: 0;
   }
   .tracking-view-actions {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+    min-width: 0;
   }
   
   /* Task List Table */
@@ -917,8 +932,13 @@ export const GlobalStyles = `
     width: 100%;
     border-collapse: collapse;
     overflow-x: auto;
-    display: block;
-    white-space: nowrap;
+    display: table;
+    table-layout: fixed;
+  }
+  
+  .task-list-table-wrapper {
+    overflow-x: auto;
+    max-width: 100%;
   }
   .task-list-table th, .task-list-table td {
     border: 1px solid var(--border-color);
@@ -1113,6 +1133,8 @@ export const GlobalStyles = `
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
+    max-width: 100vw;
+    overflow-x: auto;
   }
   .kanban-column {
     background-color: var(--background-color);
@@ -1191,6 +1213,11 @@ export const GlobalStyles = `
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1.5rem;
+  }
+  @media (max-width: 1400px) {
+    .tool-grid[style*="grid-template-columns: 3fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
   }
   .kpi-card {
     background: var(--background-color);
