@@ -115,7 +115,7 @@ By following the HMAP phases within this tool, you are guided through a best-pra
 
 If this tool has saved you time and helped accelerate your projects, consider buying us a coffee! Your support helps us maintain and improve the application.
 
-**[Buy Me a Coffee ☕](https://buy.stripe.com/test_your_payment_link)**
+**[Buy Me a Coffee ☕](https://buy.stripe.com/4gM14o1HZ5LMaYid6k7Vm00)**
 
 Every contribution, no matter how small, helps us:
 - 🚀 Add new features and improvements
