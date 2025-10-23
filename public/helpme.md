@@ -108,3 +108,21 @@ The Project Management Accelerator uses AI as a powerful co-pilot to supercharge
 -   **Enables Rapid Re-planning**: If a major change occurs, you can quickly regenerate subsequent planning documents with the new context, allowing for agility that is impossible with traditional methods.
 
 By following the HMAP phases within this tool, you are guided through a best-practice planning process that is both incredibly fast and remarkably thorough, setting your project up for success from the very beginning.
+
+---
+
+## ☕ Support This Project
+
+If this tool has saved you time and helped accelerate your projects, consider buying us a coffee! Your support helps us maintain and improve the application.
+
+**[Buy Me a Coffee ☕](https://buy.stripe.com/test_your_payment_link)**
+
+Every contribution, no matter how small, helps us:
+- 🚀 Add new features and improvements
+- 🐛 Fix bugs and enhance stability  
+- 📚 Create better documentation and tutorials
+- 💡 Develop new AI capabilities
+
+Thank you for your support! 🙏
+
+*This is a free tool built with passion. Donations are optional and greatly appreciated.*
