@@ -13,6 +13,12 @@ An AI-powered project management companion that guides you through the full life
 
 ---
 
+## 📖 Documentation
+
+**[View Full Documentation (Google Slides)](https://docs.google.com/presentation/d/1siUPQY2fyrN2VYIEpauI-XdArfKg9Kow/edit?usp=drive_link&ouid=118353001451134285194&rtpof=true&sd=true)**
+
+---
+
 ## User Operations Manual
 
 ### 1. Getting Started: Account & API Key

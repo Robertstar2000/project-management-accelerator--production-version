@@ -10,7 +10,7 @@
 
 **20x faster project execution • Autonomous AI agents • Zero learning curve**
 
-[Try It Now](http://project-management-app-12847.s3-website-us-east-1.amazonaws.com) • [View Demo](http://project-management-app-12847.s3-website-us-east-1.amazonaws.com) • [Documentation](#documentation)
+[Try It Now](http://project-management-app-12847.s3-website-us-east-1.amazonaws.com) • [Watch Video Demo](https://drive.google.com/file/d/1ZXHpEi1TYZrWMuYsIETHrA7XX3Et76OE/view?usp=drive_link) • [Documentation](https://docs.google.com/presentation/d/1siUPQY2fyrN2VYIEpauI-XdArfKg9Kow/edit?usp=drive_link&ouid=118353001451134285194&rtpof=true&sd=true)
 
 </div>
 
@@ -362,6 +362,28 @@ Multi-user support with role-based permissions, task comments, and file attachme
 - [ ] Mobile applications (iOS/Android)
 - [ ] Offline-first architecture
 - [ ] Multi-language support
+
+---
+
+## ☕ Support This Project
+
+If HMAP Accelerator has saved you time and accelerated your projects, consider buying us a coffee! Your support helps us maintain and improve the application.
+
+<div align="center">
+
+### **[☕ Buy Me a Coffee](https://buy.stripe.com/4gM14o1HZ5LMaYid6k7Vm00)**
+
+Every contribution helps us:
+- 🚀 Add new features and improvements
+- 🐛 Fix bugs and enhance stability  
+- 📚 Create better documentation and tutorials
+- 💡 Develop new AI capabilities
+
+**Thank you for your support! 🙏**
+
+*This is a free tool built with passion. Donations are optional and greatly appreciated.*
+
+</div>
 
 ---
 
