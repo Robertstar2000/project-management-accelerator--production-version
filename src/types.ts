@@ -12,6 +12,8 @@ export interface TeamMember {
     name: string;
     email: string;
     sendNotifications?: boolean;
+    isOwner?: boolean;
+    isLeadership?: boolean;
 }
 
 export interface Comment {

@@ -81,7 +81,7 @@ const ResourcesView = ({ project, onUpdateProject }) => {
 };
 
 
-const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) => {
+const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai, onUpdateTask }) => {
     if (!tasks || tasks.length === 0) return <p>Tasks will be populated here once planning is complete.</p>;
     
     const isTaskReady = (task: Task) => {
@@ -92,7 +92,10 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) 
         });
     };
     
+    const statuses: Task['status'][] = ['todo', 'inprogress', 'review', 'done'];
+    
     return (
+        <>
         <table className="task-list-table">
             <thead>
                 <tr><th>Task Name</th><th>Assigned To</th><th>Status</th><th>Due Date</th><th>Use Agent</th></tr>
@@ -111,7 +114,15 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) 
                                 )}
                             </td>
                             <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{team.find(member => member.role === task.role)?.name || 'Unassigned'}</td>
-                            <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{task.status}</td>
+                            <td>
+                                <select 
+                                    value={task.status} 
+                                    onChange={(e) => onUpdateTask(task.id, { status: e.target.value as Task['status'] }, task.status)}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </td>
                             <td onClick={() => onTaskClick(task)} style={{ cursor: 'pointer' }}>{task.endDate}</td>
                             <td>
                                 <input 
@@ -134,6 +145,7 @@ const TaskListView = ({ tasks, team, onTaskClick, onToggleAgent, project, ai }) 
                 })}
             </tbody>
         </table>
+        </>
     );
 };
 
@@ -743,7 +755,7 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
         );
         
         if (result.success) {
-            onUpdateTask(taskId, { agentStatus: 'completed', status: 'done' }, task.status);
+            onUpdateTask(taskId, { agentStatus: 'completed', status: 'review' }, task.status);
             setAgentProgress(null);
         } else {
             onUpdateProject({
@@ -758,7 +770,7 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
 
     const views = {
         'Timeline': <GanttChart tasks={project.tasks} sprints={project.sprints} projectStartDate={project.startDate} projectEndDate={project.endDate} onTaskClick={onTaskClick} />,
-        'Task List': <TaskListView tasks={project.tasks} team={project.team} onTaskClick={onTaskClick} onToggleAgent={handleToggleAgent} project={project} ai={ai} />,
+        'Task List': <TaskListView tasks={project.tasks} team={project.team} onTaskClick={onTaskClick} onToggleAgent={handleToggleAgent} project={project} ai={ai} onUpdateTask={onUpdateTask} />,
         'Kanban Board': <KanbanBoard tasks={project.tasks} onUpdateTask={onUpdateTask} onTaskClick={onTaskClick} />,
         'Workload': <WorkloadView project={project} />,
         'Milestones': <MilestonesView milestones={project.milestones} tasks={project.tasks} onUpdateMilestone={onUpdateMilestone} />,
@@ -768,11 +780,16 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
 
     return (
         <div className="tool-card">
+            <div style={{ padding: '1rem', backgroundColor: 'var(--background-secondary)', borderRadius: '4px', marginBottom: '1rem', border: '1px solid var(--border-color)' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--secondary-text)' }}>
+                    ⚠️ <strong>Important:</strong> Assign a person to all roles in the Team tab or some features will not work correctly. If a person changes, use the "Recreate Team/Resources Data" button to refresh.
+                </p>
+            </div>
             <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 <button 
                     className="button" 
                     onClick={() => {
-                        if (window.confirm('This will recreate all tasks and milestones from the planning documents. Current tracking data will be lost. Continue?')) {
+                        if (window.confirm('This will recreate all tasks and milestones from the planning documents. Task status settings will be preserved unless tasks are deleted or changed. Continue?')) {
                             onUpdateProject({ tasks: [], milestones: [] });
                         }
                     }}

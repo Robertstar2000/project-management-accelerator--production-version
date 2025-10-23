@@ -49,12 +49,18 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         if (!window.confirm("Are you sure you want to transfer ownership of this project? This action cannot be undone.")) return;
         
         const newTeam = project.team.map(member => {
-            if (member.userId === newOwnerId) return { ...member, role: 'Project Owner' };
-            if (member.userId === project.ownerId) return { ...member, role: 'Team Member' };
+            if (member.userId === newOwnerId) return { ...member, isOwner: true };
+            if (member.userId === project.ownerId) return { ...member, isOwner: false };
             return member;
         });
 
         onUpdateTeam(newTeam, newOwnerId);
+    };
+
+    const handleLeadershipToggle = (role: string, checked: boolean) => {
+        const assignment = teamAssignments.find(a => a.role === role);
+        if (!assignment || !assignment.name || !assignment.email) return;
+        handleAssignmentChange(role, 'isLeadership', checked);
     };
 
     if (extractedRoles.length === 0) {
@@ -70,15 +76,19 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
         <div>
              <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>Assign team members to roles. The project owner has full permissions.</p>
             <table className="task-list-table">
-                <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Send Notifications</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Role</th><th>Assigned To (Name)</th><th>Email</th><th>Send Notifications</th><th>Leadership</th><th>Actions</th></tr></thead>
                 <tbody>
                     {extractedRoles.map(role => {
                         const assignment = teamAssignments.find(a => a.role === role) || { name: '', email: '' };
                         const member = project.team.find(m => m.role === role);
                         const canEnableNotifications = assignment.name && assignment.email;
+                        const isOwner = member?.isOwner || member?.userId === project.ownerId;
                         return (
                             <tr key={role} style={{cursor: 'initial'}}>
-                                <td><strong>{role}</strong></td>
+                                <td>
+                                    <strong>{role}</strong>
+                                    {isOwner && <span style={{color: 'var(--accent-color)', marginLeft: '0.5rem', fontSize: '0.85em'}}>(Owner)</span>}
+                                </td>
                                 <td>
                                     <input type="text" value={assignment.name} onChange={(e) => handleAssignmentChange(role, 'name', e.target.value)} />
                                 </td>
@@ -95,10 +105,18 @@ export const TeamAssignmentsView: React.FC<TeamAssignmentsViewProps> = ({ projec
                                     />
                                 </td>
                                 <td>
-                                    {currentUser.id === project.ownerId && member && member.userId !== project.ownerId && (
+                                    <input 
+                                        type="checkbox" 
+                                        checked={assignment.isLeadership || false}
+                                        disabled={!canEnableNotifications}
+                                        onChange={(e) => handleLeadershipToggle(role, e.target.checked)}
+                                        title={!canEnableNotifications ? 'Assign name and email first' : 'Receives dashboard reports (not assigned to tasks)'}
+                                    />
+                                </td>
+                                <td>
+                                    {currentUser.id === project.ownerId && member && !isOwner && (
                                         <button className="button button-small" onClick={() => handleTransferOwnership(member.userId)}>Make Owner</button>
                                     )}
-                                    {member?.userId === project.ownerId && <span style={{color: 'var(--accent-color)'}}>Project Owner</span>}
                                 </td>
                             </tr>
                         );
