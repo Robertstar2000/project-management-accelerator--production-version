@@ -161,6 +161,11 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
         )}
         {activeTab === 'create' && (
           <div className="create-project-section">
+            <div style={{ padding: '1rem', backgroundColor: 'var(--background-secondary)', borderRadius: '4px', marginBottom: '1.5rem', border: '1px solid var(--border-color)' }}>
+                <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--secondary-text)' }}>
+                    🎉 <strong>Free Trial:</strong> Create up to 3 projects free. After that, upgrade to Basic (2 projects/month), Pro (4 projects/month), or Unlimited.
+                </p>
+            </div>
             <form onSubmit={handleSubmit}>
               <h3>1. Project Mode</h3>
               <div className="form-group mode-switch">

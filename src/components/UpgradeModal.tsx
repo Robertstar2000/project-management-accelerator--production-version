@@ -13,14 +13,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, cur
     const handleUpgrade = (plan: string) => {
         let url = '';
         switch(plan) {
-            case 'starter':
-                url = 'https://buy.stripe.com/test_STARTER_LINK'; // Replace with actual Stripe link
+            case 'basic':
+                url = 'https://buy.stripe.com/4gM6oI0DV0rs0jEeao7Vm01';
                 break;
             case 'pro':
-                url = 'https://buy.stripe.com/test_PRO_LINK'; // Replace with actual Stripe link
+                url = 'https://buy.stripe.com/4gM6oI0DV0rs0jEeao7Vm01';
                 break;
             case 'unlimited':
-                url = 'https://buy.stripe.com/test_UNLIMITED_LINK'; // Replace with actual Stripe link
+                url = 'https://buy.stripe.com/4gM6oI0DV0rs0jEeao7Vm01';
                 break;
         }
         if (url) window.open(url, '_blank');
@@ -36,15 +36,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, cur
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
                     <div className="tool-card" style={{ textAlign: 'center', padding: '1.5rem' }}>
-                        <h3>Starter</h3>
+                        <h3>Basic</h3>
                         <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-color)', margin: '1rem 0' }}>$10<span style={{ fontSize: '1rem', fontWeight: 'normal' }}>/mo</span></p>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', textAlign: 'left' }}>
-                            <li>✓ 2 additional projects first month</li>
-                            <li>✓ 2 projects per month thereafter</li>
+                            <li>✓ 2 projects per month</li>
                             <li>✓ All features included</li>
+                            <li>✓ Email support</li>
                         </ul>
-                        <button className="button button-primary" onClick={() => handleUpgrade('starter')} style={{ width: '100%' }}>
-                            Choose Starter
+                        <button className="button button-primary" onClick={() => handleUpgrade('basic')} style={{ width: '100%' }}>
+                            Choose Basic
                         </button>
                     </div>
 
@@ -52,9 +52,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, cur
                         <h3>Pro</h3>
                         <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-color)', margin: '1rem 0' }}>$20<span style={{ fontSize: '1rem', fontWeight: 'normal' }}>/mo</span></p>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', textAlign: 'left' }}>
-                            <li>✓ 4 additional projects</li>
-                            <li>✓ Priority support</li>
+                            <li>✓ 4 projects per month</li>
                             <li>✓ All features included</li>
+                            <li>✓ Priority support</li>
                         </ul>
                         <button className="button button-primary" onClick={() => handleUpgrade('pro')} style={{ width: '100%' }}>
                             Choose Pro
@@ -66,8 +66,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, cur
                         <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-color)', margin: '1rem 0' }}>$100<span style={{ fontSize: '1rem', fontWeight: 'normal' }}>/mo</span></p>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem', textAlign: 'left' }}>
                             <li>✓ Unlimited projects</li>
-                            <li>✓ Priority support</li>
                             <li>✓ All features included</li>
+                            <li>✓ Priority support</li>
                         </ul>
                         <button className="button button-primary" onClick={() => handleUpgrade('unlimited')} style={{ width: '100%' }}>
                             Choose Unlimited
