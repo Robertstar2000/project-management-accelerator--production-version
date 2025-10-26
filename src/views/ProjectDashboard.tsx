@@ -687,9 +687,26 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 : [];
             
             console.log('Final milestones:', newMilestones);
+            
+            // Generate sprints based on task dates
+            const uniqueSprints = new Set(newTasks.map(t => t.sprintId));
+            const newSprints = Array.from(uniqueSprints).map(sprintId => {
+                const sprintTasks = newTasks.filter(t => t.sprintId === sprintId);
+                const sprintStartDate = sprintTasks.reduce((earliest, t) => 
+                    t.startDate < earliest ? t.startDate : earliest, sprintTasks[0]?.startDate || new Date().toISOString().split('T')[0]);
+                const sprintEndDate = sprintTasks.reduce((latest, t) => 
+                    t.endDate > latest ? t.endDate : latest, sprintTasks[0]?.endDate || new Date().toISOString().split('T')[0]);
+                const existingSprint = projectData.sprints.find(s => s.id === sprintId);
+                return {
+                    id: sprintId,
+                    name: existingSprint?.name || sprintId.replace('sprint', 'Sprint '),
+                    startDate: sprintStartDate,
+                    endDate: sprintEndDate
+                };
+            }).sort((a, b) => a.id.localeCompare(b.id));
     
-            console.log('Saving tasks:', newTasks.length, 'milestones:', newMilestones.length);
-            handleSave({ tasks: newTasks, milestones: newMilestones });
+            console.log('Saving tasks:', newTasks.length, 'milestones:', newMilestones.length, 'sprints:', newSprints.length);
+            handleSave({ tasks: newTasks, milestones: newMilestones, sprints: newSprints });
             logAction('Plan Parsing Success', project.name, { taskCount: newTasks.length, milestoneCount: newMilestones.length });
             handleTabChange('Project Tracking');
     
@@ -700,7 +717,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         } finally {
             setIsParsingPlan(false);
         }
-    }, [project.name, projectData.documents, projectData.phasesData, projectData.sprints, handleSave, handleTabChange]);
+    }, [project.name, projectData.documents, projectData.phasesData, projectData.sprints, handleSave, handleTabChange, projectData.tasks]);
 
     // This effect detects when planning is newly completed OR when data is cleared for reparsing
     useEffect(() => {
