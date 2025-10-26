@@ -692,10 +692,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const uniqueSprints = new Set(newTasks.map(t => t.sprintId));
             const newSprints = Array.from(uniqueSprints).map(sprintId => {
                 const sprintTasks = newTasks.filter(t => t.sprintId === sprintId);
+                if (sprintTasks.length === 0) {
+                    const existingSprint = projectData.sprints.find(s => s.id === sprintId);
+                    return existingSprint || { id: sprintId, name: sprintId.replace('sprint', 'Sprint '), startDate: '', endDate: '' };
+                }
                 const sprintStartDate = sprintTasks.reduce((earliest, t) => 
-                    t.startDate < earliest ? t.startDate : earliest, sprintTasks[0]?.startDate || new Date().toISOString().split('T')[0]);
+                    !earliest || t.startDate < earliest ? t.startDate : earliest, '');
                 const sprintEndDate = sprintTasks.reduce((latest, t) => 
-                    t.endDate > latest ? t.endDate : latest, sprintTasks[0]?.endDate || new Date().toISOString().split('T')[0]);
+                    !latest || t.endDate > latest ? t.endDate : latest, '');
                 const existingSprint = projectData.sprints.find(s => s.id === sprintId);
                 return {
                     id: sprintId,
