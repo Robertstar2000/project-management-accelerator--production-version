@@ -596,30 +596,58 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             const taskNameToIdMap = new Map<string, string>();
             const newTasks: Task[] = parsedTasks.map((t, index) => {
                 const taskId = `task-${Date.now()}-${index}`;
-                const taskName = t.task_name || `Untitled Task ${index+1}`;
                 
-                // Use lowercase for the map key to handle case-insensitivity from AI
+                // Try all possible task name column variations
+                const taskName = t.task_name || t.taskname || t.task || t.name || `Untitled Task ${index+1}`;
                 taskNameToIdMap.set(taskName.toLowerCase().trim(), taskId);
                 
-                const sprintName = t.sprint || '';
+                // Try all possible sprint column variations
+                const sprintName = t.sprint || t.sprint_name || t.sprintname || '';
                 const sprint = projectData.sprints.find(s => s.name.toLowerCase() === sprintName.toLowerCase().trim());
     
-                // Parse dates - handle multiple possible column formats
-                const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || new Date().toISOString().split('T')[0];
-                const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || new Date().toISOString().split('T')[0];
+                // Parse dates - handle all possible column name variations
+                const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || t.start || 
+                                  t.start_date_yyyymmdd || t.start_date_yyyy_mm_dd || 
+                                  new Date().toISOString().split('T')[0];
+                const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || t.end || 
+                                t.end_date_yyyymmdd || t.due_date || t.duedate || 
+                                new Date().toISOString().split('T')[0];
+                
+                // Try all possible duration column variations
+                const duration = t.duration || t.duration_days || t.durationdays || t.days || null;
+                
+                // Calculate end date from duration if provided and start date exists
+                let finalEndDate = endDate;
+                if (duration && startDate && (!endDate || endDate === new Date().toISOString().split('T')[0])) {
+                    const durationNum = parseInt(duration.toString().replace(/[^0-9]/g, ''), 10);
+                    if (!isNaN(durationNum) && durationNum > 0) {
+                        const start = new Date(startDate);
+                        start.setDate(start.getDate() + durationNum);
+                        finalEndDate = start.toISOString().split('T')[0];
+                    }
+                }
+                
+                // Try all possible role column variations
+                const role = t.role || t.assigned_to || t.assignedto || t.owner || null;
+                
+                // Try all possible subcontractor column variations
+                const subcontractor = t.subcontractor || t.sub || t.outsourced || '';
+                
+                // Try all possible dependencies column variations
+                const dependencies = t.dependencies || t.depends_on || t.dependson || t.prerequisites || '';
                 
                 const existingTask = projectData.tasks.find(et => et.name.toLowerCase().trim() === taskName.toLowerCase().trim());
                 
                 return {
                     id: taskId,
                     name: taskName,
-                    role: t.role || null,
+                    role: role,
                     startDate: startDate,
-                    endDate: endDate,
+                    endDate: finalEndDate,
                     sprintId: sprint ? sprint.id : projectData.sprints[0]?.id || 'sprint1',
                     status: existingTask?.status || 'todo',
-                    isSubcontracted: t.subcontractor?.toLowerCase().trim() === 'yes',
-                    dependsOn: t.dependencies ? t.dependencies.split(',').map(d => d.trim()) : [],
+                    isSubcontracted: subcontractor.toLowerCase().trim() === 'yes',
+                    dependsOn: dependencies ? dependencies.split(',').map(d => d.trim()) : [],
                     description: existingTask?.description || '',
                     actualTime: existingTask?.actualTime || null,
                     actualCost: existingTask?.actualCost || null,
