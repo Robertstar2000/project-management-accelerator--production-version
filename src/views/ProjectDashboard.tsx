@@ -602,8 +602,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 taskNameToIdMap.set(taskName.toLowerCase().trim(), taskId);
                 
                 // Try all possible sprint column variations
-                const sprintName = t.sprint || t.sprint_name || t.sprintname || '';
-                const sprint = projectData.sprints.find(s => s.name.toLowerCase() === sprintName.toLowerCase().trim());
+                const sprintName = t.sprint || t.sprint_name || t.sprintname || 'Sprint 1';
+                let sprint = projectData.sprints.find(s => s.name.toLowerCase() === sprintName.toLowerCase().trim());
+                
+                // If sprint doesn't exist, create temporary sprint ID from name
+                if (!sprint && sprintName) {
+                    const sprintNum = sprintName.match(/\d+/)?.[0] || '1';
+                    sprint = { id: `sprint${sprintNum}`, name: sprintName, startDate: '', endDate: '' };
+                }
     
                 // Parse dates - handle all possible column name variations
                 const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || t.start || 
