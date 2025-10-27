@@ -796,7 +796,7 @@ export const ProjectTrackingView: React.FC<ProjectTrackingViewProps> = ({ projec
                     className="button" 
                     onClick={() => {
                         if (window.confirm('This will recreate all tasks and milestones from the planning documents. Task status settings will be preserved unless tasks are deleted or changed. Continue?')) {
-                            onUpdateProject({ tasks: [], milestones: [] });
+                            onUpdateProject({ tasks: [], milestones: [], sprints: [] });
                         }
                     }}
                 >
