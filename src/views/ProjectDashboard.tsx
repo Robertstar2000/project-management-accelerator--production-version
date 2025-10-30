@@ -675,13 +675,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             // Parse Milestones - handle all possible column name variations
             const parsedMilestones = parseMarkdownTable(milestonesText);
             console.log('Parsed milestones raw:', parsedMilestones);
+            console.log('Milestones text length:', milestonesText.length);
             
             const newMilestones: Milestone[] = parsedMilestones.length > 0 
                 ? parsedMilestones.map((m, index) => {
                     // Try all possible name column variations
-                    const milestoneName = m.milestone_name || m.milestonename || m.name || m.milestone || `Milestone ${index + 1}`;
+                    const milestoneName = m.milestone_name || m.milestonename || m.name || m.milestone || m.title || `Milestone ${index + 1}`;
                     // Try all possible date column variations
-                    const milestoneDate = m.date_yyyy_mm_dd || m.date || m.planned_date || m.planneddate || m.target_date || m.targetdate || new Date().toISOString().split('T')[0];
+                    const milestoneDate = m.date_yyyy_mm_dd || m.date || m.planned_date || m.planneddate || m.target_date || m.targetdate || m.due_date || m.duedate || new Date().toISOString().split('T')[0];
                     
                     return {
                         id: `milestone-${Date.now()}-${index}`,
@@ -716,6 +717,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             }).sort((a, b) => a.id.localeCompare(b.id));
     
             console.log('Saving tasks:', newTasks.length, 'milestones:', newMilestones.length, 'sprints:', newSprints.length);
+            console.log('Milestone data:', newMilestones);
             handleSave({ tasks: newTasks, milestones: newMilestones, sprints: newSprints });
             logAction('Plan Parsing Success', project.name, { taskCount: newTasks.length, milestoneCount: newMilestones.length });
             handleTabChange('Project Tracking');
