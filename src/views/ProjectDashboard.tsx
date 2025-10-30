@@ -601,8 +601,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 const taskName = t.task_name || t.taskname || t.task || t.name || `Untitled Task ${index+1}`;
                 taskNameToIdMap.set(taskName.toLowerCase().trim(), taskId);
                 
-                // Try all possible sprint column variations
-                const sprintName = t.sprint || t.sprint_name || t.sprintname || 'Sprint 1';
+                // Try all possible sprint column variations - be very flexible
+                const sprintName = t.sprint || t.sprint_name || t.sprintname || t.phase || t.iteration || t.cycle || t.wave || 'Sprint 1';
                 let sprint = projectData.sprints.find(s => s.name.toLowerCase() === sprintName.toLowerCase().trim());
                 
                 // If sprint doesn't exist, create temporary sprint ID from name
@@ -611,12 +611,12 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                     sprint = { id: `sprint${sprintNum}`, name: sprintName, startDate: '', endDate: '' };
                 }
     
-                // Parse dates - handle all possible column name variations
-                const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || t.start || 
-                                  t.start_date_yyyymmdd || t.start_date_yyyy_mm_dd || 
+                // Parse dates - handle all possible column name variations and formats
+                const startDate = t.start_date_yyyy_mm_dd || t.start_date || t.startdate || t.start || t.begin || t.begin_date || 
+                                  t.start_date_yyyymmdd || t.start_date_yyyy_mm_dd || t.from || t.from_date ||
                                   new Date().toISOString().split('T')[0];
-                const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || t.end || 
-                                t.end_date_yyyymmdd || t.due_date || t.duedate || 
+                const endDate = t.end_date_yyyy_mm_dd || t.end_date || t.enddate || t.end || t.finish || t.finish_date ||
+                                t.end_date_yyyymmdd || t.due_date || t.duedate || t.deadline || t.to || t.to_date ||
                                 new Date().toISOString().split('T')[0];
                 
                 // Try all possible duration column variations
@@ -634,13 +634,13 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 }
                 
                 // Try all possible role column variations
-                const role = t.role || t.assigned_to || t.assignedto || t.owner || null;
+                const role = t.role || t.assigned_to || t.assignedto || t.owner || t.responsible || t.assignee || t.resource || t.team_member || null;
                 
                 // Try all possible subcontractor column variations
-                const subcontractor = t.subcontractor || t.sub || t.outsourced || '';
+                const subcontractor = t.subcontractor || t.sub || t.outsourced || t.external || t.vendor || t.contractor || '';
                 
                 // Try all possible dependencies column variations
-                const dependencies = t.dependencies || t.depends_on || t.dependson || t.prerequisites || '';
+                const dependencies = t.dependencies || t.depends_on || t.dependson || t.prerequisites || t.prereqs || t.blockers || t.requires || '';
                 
                 const existingTask = projectData.tasks.find(et => et.name.toLowerCase().trim() === taskName.toLowerCase().trim());
                 
@@ -679,15 +679,29 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
             
             const newMilestones: Milestone[] = parsedMilestones.length > 0 
                 ? parsedMilestones.map((m, index) => {
-                    // Try all possible name column variations
-                    const milestoneName = m.milestone_name || m.milestonename || m.name || m.milestone || m.title || `Milestone ${index + 1}`;
-                    // Try all possible date column variations
-                    const milestoneDate = m.date_yyyy_mm_dd || m.date || m.planned_date || m.planneddate || m.target_date || m.targetdate || m.due_date || m.duedate || new Date().toISOString().split('T')[0];
+                    // Get all property keys and values
+                    const keys = Object.keys(m);
+                    const values = Object.values(m);
+                    
+                    // Find name - try common variations first, then any string column
+                    let milestoneName = m.milestone_name || m.milestonename || m.name || m.milestone || m.title || m.deliverable || m.event || m.phase;
+                    if (!milestoneName) {
+                        // Find first non-date string value
+                        milestoneName = values.find(v => typeof v === 'string' && v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) || `Milestone ${index + 1}`;
+                    }
+                    
+                    // Find date - try common variations first, then any date-like value
+                    let milestoneDate = m.date_yyyy_mm_dd || m.date || m.planned_date || m.planneddate || m.target_date || m.targetdate || 
+                                       m.due_date || m.duedate || m.completion_date || m.completiondate || m.deadline || m.end_date || m.enddate;
+                    if (!milestoneDate) {
+                        // Find first date-like value (YYYY-MM-DD format)
+                        milestoneDate = values.find(v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) || new Date().toISOString().split('T')[0];
+                    }
                     
                     return {
                         id: `milestone-${Date.now()}-${index}`,
-                        name: milestoneName,
-                        plannedDate: milestoneDate,
+                        name: String(milestoneName),
+                        plannedDate: String(milestoneDate),
                         status: 'Planned',
                     };
                 })
