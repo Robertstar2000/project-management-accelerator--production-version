@@ -99,7 +99,7 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'User already exists' });
     }
     
-    const projectLimit = email === process.env.BACKDOOR_USER_EMAIL ? -1 : parseInt(process.env.DEFAULT_PROJECT_LIMIT) || 3;
+    const projectLimit = email === process.env.BACKDOOR_USER_EMAIL ? -1 : parseInt(process.env.DEFAULT_PROJECT_LIMIT) || 6;
     const newUser = { 
       id: `user-${Date.now()}`, 
       username, 
