@@ -54,7 +54,7 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
         return <p>Workload view will be available once tasks are generated.</p>;
     }
 
-    if (extractedRoles.length === 0 && !team.some(m => m.role === 'Leadership')) {
+    if (extractedRoles.length === 0) {
         return (
             <div>
                 <p>Workload view requires roles to be defined in the 'Resources & Skills List' document.</p>
@@ -66,17 +66,19 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
     const projectWeeks = getProjectWeeks(startDate, endDate);
     
     const allRoles = useMemo(() => {
-        const roles = [...extractedRoles];
-        if (!roles.includes('Leadership')) {
-            roles.unshift('Leadership');
-        }
-        return roles;
-    }, [extractedRoles]);
+        // Get all unique roles from both extracted roles and actual task assignments
+        const rolesSet = new Set([...extractedRoles]);
+        tasks.forEach(task => {
+            if (task.role) rolesSet.add(task.role);
+        });
+        return Array.from(rolesSet).sort();
+    }, [extractedRoles, tasks]);
 
     const workloadData = useMemo(() => {
         return allRoles.map(role => {
             const member = team.find(m => m.role === role);
-            const roleTasks = tasks.filter(task => task.role === role);
+            // Filter tasks for this role, ensure valid dates
+            const roleTasks = tasks.filter(task => task.role === role && task.startDate && task.endDate);
             
             const weeklyWorkload = projectWeeks.map(weekStart => {
                 const weekEnd = new Date(weekStart);
@@ -89,6 +91,10 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
                 roleTasks.forEach(task => {
                     const taskStart = new Date(task.startDate);
                     const taskEnd = new Date(task.endDate);
+                    
+                    // Validate dates
+                    if (isNaN(taskStart.getTime()) || isNaN(taskEnd.getTime())) return;
+                    
                     taskStart.setHours(0, 0, 0, 0);
                     taskEnd.setHours(23, 59, 59, 999);
 
@@ -104,6 +110,7 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ project }) => {
                         const endDay = new Date(overlapEnd);
                         endDay.setHours(0, 0, 0, 0);
                         
+                        // Count business days (Mon-Fri) in the overlap period
                         while (currentDay <= endDay) {
                             const dayOfWeek = currentDay.getDay();
                             if (dayOfWeek >= 1 && dayOfWeek <= 5) {

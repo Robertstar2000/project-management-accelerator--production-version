@@ -151,7 +151,12 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setProjects([]);
+      setRecentlyViewedIds([]);
+      setSelectedProject(null);
+      return;
+    }
     
     try {
       const storedProjects = localStorage.getItem(`hmap-projects-${currentUser.id}`);
