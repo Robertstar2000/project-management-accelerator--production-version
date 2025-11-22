@@ -258,14 +258,14 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         try {
             const { firstDocContext, prevDocContext } = getRelevantContext(docToGenerate, currentProjectData.documents, currentProjectData.phasesData);
             
-            const getPromptTextWithContext = (context: string) => {
+            const getPromptTextWithContext = (context: string, userInputOverride?: string) => {
                 const promptFn = getPromptFunction(docToGenerate.title, docToGenerate.phase);
                 const commonArgs = {
                     name: currentProjectData.name, discipline: currentProjectData.discipline, context, mode: currentProjectData.mode,
                     scope: currentProjectData.scope, teamSize: currentProjectData.teamSize, complexity: currentProjectData.complexity,
                 };
                 if (promptFn === PROMPTS.phase1) {
-                    return promptFn(commonArgs.name, commonArgs.discipline, userInput, commonArgs.mode, commonArgs.scope, commonArgs.teamSize, commonArgs.complexity);
+                    return promptFn(commonArgs.name, commonArgs.discipline, userInputOverride || userInput, commonArgs.mode, commonArgs.scope, commonArgs.teamSize, commonArgs.complexity);
                 } else if (promptFn === PROMPTS.phase8_generic) {
                     return promptFn(docToGenerate.title, commonArgs.name, commonArgs.discipline, commonArgs.context, commonArgs.mode, commonArgs.scope, commonArgs.teamSize, commonArgs.complexity);
                 } else if (promptFn === PROMPTS.genericDocumentPrompt) {
@@ -275,7 +275,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 }
             };
 
-            const promptInstructions = getPromptTextWithContext('');
+            const promptInstructions = getPromptTextWithContext('', userInput);
             const availableCharsForContext = MAX_PAYLOAD_CHARS - promptInstructions.length;
             
             let firstDocPart = firstDocContext ? firstDocContext.content : '';
@@ -313,7 +313,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 finalContext = "CRITICAL: The required preceding documents have not been approved or their compacted context is unavailable. Generate this document based on its title and project parameters alone.";
             }
 
-            const promptWithContext = getPromptTextWithContext(finalContext.trim());
+            const promptWithContext = getPromptTextWithContext(finalContext.trim(), userInput);
             const prompt = truncatePrompt(promptWithContext);
             
             const result = await withRetry(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt }));
