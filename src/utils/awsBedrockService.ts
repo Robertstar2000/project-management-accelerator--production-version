@@ -29,8 +29,28 @@ export class AWSBedrockService {
   // Gemini-compatible interface
   get models() {
     return {
-      generateContent: async ({ contents }: { contents: string }) => {
-        const text = await this.generateContent(contents);
+      generateContent: async ({ contents, config }: { contents: string; config?: any }) => {
+        let prompt = contents;
+        
+        // If JSON output is requested, add explicit JSON formatting instruction
+        if (config?.responseMimeType === 'application/json') {
+          prompt = `${contents}\n\nIMPORTANT: You must respond with ONLY valid JSON. Do not include any markdown formatting, code blocks, or explanatory text. Output raw JSON only.`;
+        }
+        
+        const text = await this.generateContent(prompt);
+        
+        // Clean up response if JSON was requested
+        if (config?.responseMimeType === 'application/json') {
+          // Remove markdown code blocks if present
+          let cleaned = text.trim();
+          if (cleaned.startsWith('```json')) {
+            cleaned = cleaned.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+          } else if (cleaned.startsWith('```')) {
+            cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '');
+          }
+          return { text: cleaned.trim() };
+        }
+        
         return { text };
       },
     };
