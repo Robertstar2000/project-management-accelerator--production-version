@@ -103,7 +103,8 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
             onCreateProject({ name, template, mode: projectMode, scope: projectScope, teamSize, complexity: projectComplexity });
         } catch (error) {
             console.error("Failed to generate custom document list:", error);
-            alert("Could not generate the document list for your custom project type. Please check the console and try again.");
+            const errorMsg = error?.message || error?.toString() || 'Unknown error';
+            alert(`Could not generate the document list for your custom project type.\n\nError: ${errorMsg}\n\nPlease check the console for more details.`);
         } finally {
             setIsGeneratingDocs(false);
         }
