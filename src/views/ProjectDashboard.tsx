@@ -230,10 +230,10 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
         if (!projectStateOverride) {
             setLoadingPhase({ docId, step: 'generating' });
             
-            // Reset document status when regenerating
-            const doc = projectDataRef.current.documents.find(d => d.id === docId);
-            if (doc?.status === 'Approved') {
-                handleUpdateDocument(docId, 'Working');
+    // Reset document status when regenerating
+    const doc = projectDataRef.current.documents.find(d => d.id === docId);
+    if (doc?.status === 'Approved' || doc?.status === 'Failed') {
+        handleUpdateDocument(docId, 'Working');
                 
                 // Clear related data when regenerating key documents
                 const title = doc.title.toLowerCase();
