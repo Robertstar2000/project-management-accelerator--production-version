@@ -10,11 +10,10 @@
 3. Create NEW access key
 4. Copy the Access Key ID and Secret Access Key
 
-### Google Gemini API Key (COMPROMISED - Rotate NOW)
+### Google Gemini API Key (Optional - stored in Lambda)
 1. Go to: https://aistudio.google.com/apikey
-2. Delete old key: YAIzaSyB5HcuI42MLKd9OQ2DPk7TNFusG_NJgmVU
-3. Create new key
-4. Copy the new key
+2. Create new key if needed
+3. Add to Lambda environment variables as GEMINI_API_KEY
 
 ### Stripe Keys (COMPROMISED - Rotate NOW)
 1. Go to: https://dashboard.stripe.com/apikeys
