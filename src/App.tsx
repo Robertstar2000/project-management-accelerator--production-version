@@ -80,12 +80,17 @@ const App = () => {
 
   const initializeAi = useCallback((key: string, source: string): boolean => {
     try {
+      if (!key || key.trim() === '') {
+        console.error(`Invalid API key from ${source}`);
+        return false;
+      }
       const genAI = new GoogleGenAI({ apiKey: key });
       setAi(genAI);
       setApiKeyStatus(source);
       if (source === 'user' && currentUser) {
         localStorage.setItem(`hmap-gemini-key-${currentUser.id}`, key);
       }
+      console.log(`✅ Gemini initialized from ${source}`);
       return true;
     } catch (error: any) {
       console.error(`Failed to initialize GoogleGenAI from ${source}:`, error);
@@ -97,12 +102,12 @@ const App = () => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
       
       const testResponse = await fetch(`${backendUrl}/api/bedrock/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: 'hi' }),
+        body: JSON.stringify({ prompt: 'test' }),
         signal: controller.signal
       });
       
@@ -116,10 +121,10 @@ const App = () => {
         return true;
       }
       
-      console.info('AWS Bedrock unavailable:', testResponse.status);
+      console.warn('⚠️ AWS Bedrock unavailable:', testResponse.status);
       return false;
     } catch (error: any) {
-      console.info('AWS Bedrock unavailable:', error.message);
+      console.warn('⚠️ AWS Bedrock unavailable:', error.message);
       return false;
     }
   }, []);
@@ -178,32 +183,32 @@ const App = () => {
       let initialized = false;
       
       // Try AWS Bedrock first (primary)
-      console.log('Trying AWS Bedrock (primary)...');
-      initialized = await initializeAwsBedrock();
-      if (initialized) return;
+      console.log('🔄 Trying AWS Bedrock (primary)...');
+      try {
+        initialized = await initializeAwsBedrock();
+        if (initialized) return;
+      } catch (e) {
+        console.warn('⚠️ AWS Bedrock failed:', e);
+      }
       
       // Fallback to environment Gemini key
+      console.log('🔄 Trying Gemini (environment key)...');
       const envGeminiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (envGeminiKey) {
         initialized = initializeAi(envGeminiKey, 'promo');
-        if (initialized) {
-          console.log('✅ Gemini initialized (fallback)');
-          return;
-        }
+        if (initialized) return;
       }
       
       // Fallback to user's Gemini key
+      console.log('🔄 Trying Gemini (user key)...');
       const userKey = localStorage.getItem(`hmap-gemini-key-${currentUser.id}`);
       if (userKey) {
         initialized = initializeAi(userKey, 'user');
-        if (initialized) {
-          console.log('✅ Gemini initialized (user key fallback)');
-          return;
-        }
+        if (initialized) return;
         localStorage.removeItem(`hmap-gemini-key-${currentUser.id}`);
       }
       
-      console.warn('❌ No AI service available');
+      console.error('❌ No AI service available');
       setApiKeyStatus('none');
     })();
   }, [currentUser]);

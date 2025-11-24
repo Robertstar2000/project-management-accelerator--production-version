@@ -10,19 +10,29 @@ export class AWSBedrockService {
       const response = await fetch(`${this.apiUrl}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, maxTokens: 4096 })
+        body: JSON.stringify({ prompt, maxTokens: 4096 }),
+        signal: AbortSignal.timeout(30000) // 30 second timeout
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Backend request failed');
+        let errorMsg = 'Backend request failed';
+        try {
+          const error = await response.json();
+          errorMsg = error.error || errorMsg;
+        } catch (e) {
+          errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
+      if (!data.text) {
+        throw new Error('Invalid response from backend');
+      }
       return data.text;
     } catch (error: any) {
-      console.error('AWS Bedrock Error:', error);
-      throw new Error(`AWS Bedrock failed: ${error.message}`);
+      console.error('AWS Bedrock Error:', error.message);
+      throw error;
     }
   }
 
