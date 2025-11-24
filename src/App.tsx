@@ -191,18 +191,18 @@ const App = () => {
         console.warn('⚠️ AWS Bedrock failed:', e);
       }
       
-      // Fallback to environment Gemini key
-      console.log('🔄 Trying Gemini (environment key)...');
+      // Fallback to environment Gemini key (only if key exists)
       const envGeminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (envGeminiKey) {
+      if (envGeminiKey && envGeminiKey.trim() !== '') {
+        console.log('🔄 Trying Gemini (environment key)...');
         initialized = initializeAi(envGeminiKey, 'promo');
         if (initialized) return;
       }
       
-      // Fallback to user's Gemini key
-      console.log('🔄 Trying Gemini (user key)...');
+      // Fallback to user's Gemini key (only if key exists)
       const userKey = localStorage.getItem(`hmap-gemini-key-${currentUser.id}`);
-      if (userKey) {
+      if (userKey && userKey.trim() !== '') {
+        console.log('🔄 Trying Gemini (user key)...');
         initialized = initializeAi(userKey, 'user');
         if (initialized) return;
         localStorage.removeItem(`hmap-gemini-key-${currentUser.id}`);
