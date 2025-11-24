@@ -2,10 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  GeminiApiKey:
-    Type: String
-    Default: YOUR_GEMINI_API_KEY_HERE  # Override with actual key during deployment
-    NoEcho: true  # Tells CloudFormation to hide this parameter value in stack outputs
+  # Removed insecure GeminiApiKey parameter - using AWS Secrets Manager instead
 
 Globals:
   Function:
@@ -23,7 +20,7 @@ Globals:
         DEFAULT_PROJECT_LIMIT: '3'
         BACKDOOR_USER_EMAIL: mifecoinc@gmail.com
         FRONTEND_URL: http://project-management-app-12847.s3-website-us-east-1.amazonaws.com
-        GEMINI_API_KEY: !Ref GeminiApiKey
+        GEMINI_API_KEY: '{{resolve:secretsmanager:GeminiApiKeySecret}}'
         AWS_SES_REGION: us-east-1
         FROM_EMAIL: WEBMAIL@mifeco.com
         AWS_SES_FROM_EMAIL: WEBMAIL@mifeco.com
@@ -58,6 +55,10 @@ Resources:
             Resource:
               - !GetAtt UsersTable.Arn
               - !GetAtt TokensTable.Arn
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: !Ref GeminiApiKeySecret
       Events:
         ApiEvent:
           Type: Api
@@ -91,6 +92,13 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: expiresAt
         Enabled: true
+
+  GeminiApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: project-management-gemini-api-key
+      Description: Gemini API Key for Project Management Accelerator
+      SecretString: "YOUR_GEMINI_API_KEY_HERE"
 
 Outputs:
   ApiUrl:

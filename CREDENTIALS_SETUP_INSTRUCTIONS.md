@@ -1,19 +1,20 @@
-# 🔐 CRITICAL: How to Set Up Credentials Securely
 
-## ⚠️ NEVER SHARE OR COMMIT THESE FILES
-
-## Step 1: Rotate ALL Compromised Credentials
-
-### AWS Credentials (COMPROMISED - Rotate NOW)
+### AWS Credentials 
 1. Go to: https://console.aws.amazon.com/iam/home#/security_credentials
 2. Delete/Deactivate ALL old keys
 3. Create NEW access key
 4. Copy the Access Key ID and Secret Access Key
 
-### Google Gemini API Key (Optional - stored in Lambda)
+### Secure Google Gemini API Key Setup
 1. Go to: https://aistudio.google.com/apikey
 2. Create new key if needed
-3. Add to Lambda environment variables as GEMINI_API_KEY
+3. The API key is now securely stored in AWS Secrets Manager
+4. **IMPORTANT**: After deploying your SAM stack, update the secret value:
+   ```bash
+   aws secretsmanager put-secret-value \
+     --secret-id project-management-gemini-api-key \
+     --secret-string "YOUR_ACTUAL_GEMINI_API_KEY_HERE"
+   ```
 
 ### Stripe Keys (COMPROMISED - Rotate NOW)
 1. Go to: https://dashboard.stripe.com/apikeys
