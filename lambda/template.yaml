@@ -17,6 +17,7 @@ Globals:
         DEFAULT_PROJECT_LIMIT: '3'
         BACKDOOR_USER_EMAIL: mifecoinc@gmail.com
         FRONTEND_URL: http://project-management-app-12847.s3-website-us-east-1.amazonaws.com
+        GEMINI_API_KEY: YOUR_GEMINI_API_KEY_HERE
         AWS_SES_REGION: us-east-1
         FROM_EMAIL: WEBMAIL@mifeco.com
         AWS_SES_FROM_EMAIL: WEBMAIL@mifeco.com
