@@ -384,4 +384,47 @@ app.post('/api/bedrock/generate', async (req, res) => {
   }
 });
 
+app.post('/api/gemini/generate', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const apiKey = process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ error: 'Gemini API key not configured' });
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Gemini API request failed');
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!text) {
+      throw new Error('Invalid response from Gemini API');
+    }
+
+    res.json({ text });
+  } catch (error) {
+    console.error('Gemini error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports.handler = serverless(app);

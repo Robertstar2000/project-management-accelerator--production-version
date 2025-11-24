@@ -2,6 +2,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { AWSBedrockService } from './utils/awsBedrockService';
+import { GeminiLambdaService } from './utils/geminiLambdaService';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from './components/Header';
 import { LandingPage } from './views/LandingPage';
@@ -22,7 +23,7 @@ import { subscribeToUpdates, notifyUpdate } from './utils/syncService';
 import { Project, Task, Notification } from './types';
 
 const App = () => {
-  const [ai, setAi] = useState<GoogleGenAI | AWSBedrockService | null>(null);
+  const [ai, setAi] = useState<GoogleGenAI | AWSBedrockService | GeminiLambdaService | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -191,15 +192,28 @@ const App = () => {
         console.warn('⚠️ AWS Bedrock failed:', e);
       }
       
-      // Fallback to environment Gemini key (only if key exists)
-      const envGeminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (envGeminiKey && envGeminiKey.trim() !== '') {
-        console.log('🔄 Trying Gemini (environment key)...');
-        initialized = initializeAi(envGeminiKey, 'promo');
-        if (initialized) return;
+      // Fallback to Gemini via Lambda (uses VITE_GEMINI_API_KEY from Lambda env)
+      console.log('🔄 Trying Gemini via Lambda (fallback)...');
+      try {
+        const geminiService = new GeminiLambdaService();
+        const testResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/gemini/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: 'test' }),
+          signal: AbortSignal.timeout(2000)
+        });
+        
+        if (testResponse.ok) {
+          setAi(geminiService);
+          setApiKeyStatus('gemini-lambda');
+          console.log('✅ Gemini Lambda connected');
+          return;
+        }
+      } catch (e) {
+        console.warn('⚠️ Gemini Lambda failed:', e);
       }
       
-      // Fallback to user's Gemini key (only if key exists)
+      // Fallback to user's local Gemini key
       const userKey = localStorage.getItem(`hmap-gemini-key-${currentUser.id}`);
       if (userKey && userKey.trim() !== '') {
         console.log('🔄 Trying Gemini (user key)...');
