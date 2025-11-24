@@ -115,9 +115,111 @@ The app tries AI services in this order:
 
 ### For Production
 - Use AWS IAM roles instead of access keys
-- Use AWS Secrets Manager
+- Use AWS Secrets Manager for sensitive data
 - Enable CloudWatch logging
 - Set up billing alerts
+
+---
+
+# 🔄 GitHub Actions CI/CD Setup
+
+## Overview
+
+Your project now includes **automatic Lambda deployment** via GitHub Actions. When you push changes to the `main` branch that affect Lambda files (`lambda/` directory), GitHub will automatically:
+
+1. Validate the SAM template
+2. Build and deploy the Lambda function
+3. Notify you of deployment results
+
+## GitHub Secrets Configuration
+
+### Step 1: Go to GitHub Repository Settings
+1. Open your GitHub repository
+2. Click "Settings" tab
+3. Scroll down to "Security" → "Secrets and variables" → "Actions"
+
+### Step 2: Add AWS Credentials as Secrets
+Click "New repository secret" and add:
+
+#### `AWS_ACCESS_KEY_ID`
+```
+Name: AWS_ACCESS_KEY_ID
+Value: AKIA...your-access-key-here
+```
+
+#### `AWS_SECRET_ACCESS_KEY`
+```
+Name: AWS_SECRET_ACCESS_KEY
+Value: your-secret-key-here
+```
+
+### Step 3: Update Credentials Setup
+You can create a dedicated IAM user for GitHub Actions:
+
+1. Go to AWS Console → IAM → Users → Create user
+2. User name: `github-actions-lambda-deployer`
+3. Attach these policies:
+   - `AWSCloudFormationFullAccess`
+   - `AWSLambda_FullAccess`
+   - `IAMFullAccess` (for creating roles)
+   - `AmazonS3FullAccess` (if using S3 deployment artifacts)
+   - `SecretsManagerReadWrite` (for accessing Secrets Manager)
+4. Generate access keys for this user
+5. Add the keys as GitHub secrets (above)
+
+## Workflow Triggers
+
+The deployment triggers on:
+- Pushes to `main` branch
+- Changes to files in `lambda/` directory
+- Changes to the workflow file itself
+
+## Monitoring Deployments
+
+### View Deployment Status
+1. Go to your GitHub repository
+2. Click "Actions" tab
+3. Select "Deploy Lambda to AWS" workflow
+4. Click on the running job to see logs
+
+### Deployment Logs Include
+- SAM template validation
+- Build output
+- Deployment status
+- Lambda API URL
+- Success/failure notifications
+
+## Troubleshooting CI/CD
+
+### "AWS Credentials Not Working"
+- Verify secrets are set with correct names: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- Ensure the IAM user has required permissions
+- Check that secrets aren't expired
+
+### "SAM Build Fails"
+- Verify your `lambda/package.json` dependencies
+- Check that SAM template is valid
+- Ensure Node.js version matches (18.x)
+
+### "Deployment Stalled"
+- Check AWS service limits
+- Verify region (us-east-1)
+- Ensure CloudFormation stack name matches
+
+### Manual Override
+If CI/CD fails, you can still deploy manually:
+```bash
+./DEPLOY_SAM.bat
+```
+
+This bypasses GitHub Actions and deploys directly to AWS.
+
+## Cost Impact
+
+GitHub Actions usage:
+- **Free tier**: 2,000 minutes/month
+- **Lambda deployments**: ~3-5 minutes each
+- **Typical cost**: $0.008 per deployment
 
 ## Troubleshooting
 
