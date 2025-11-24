@@ -392,7 +392,8 @@ app.post('/api/gemini/generate', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const apiKey = process.env.VITE_GEMINI_API_KEY;
+    // Try Lambda environment variable first (from Secrets Manager), then VITE fallback
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(503).json({ error: 'Gemini API key not configured' });
     }
