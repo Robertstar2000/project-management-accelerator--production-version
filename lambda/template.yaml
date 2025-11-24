@@ -9,11 +9,11 @@ Globals:
     Environment:
       Variables:
         AWS_BEDROCK_REGION: us-east-1
-        AWS_BEDROCK_ACCESS_KEY: AKIASQXLXTBWOAPEKHF3
-        AWS_BEDROCK_SECRET_KEY: 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
+        AWS_BEDROCK_ACCESS_KEY: 
+        AWS_BEDROCK_SECRET_KEY: 
         JWT_SECRET: 8f3a9c2e7b1d4f6a5e8c9b2d7f4a6e1c3b5d8f2a9c7e4b6d1f3a8c5e7b9d2f4a
-        STRIPE_SECRET_KEY: sk_test_51RYHVjLFWluMTxK7exQY5vdrqG0FW3w3XqrCdFdQ4aWgQ0BiKpGsSWa5vnnFtBcTkXHBsn1fXUJEQEvhvHWgPwwW00FFHGna87
-        STRIPE_WEBHOOK_SECRET: sk_test_51RYHVjLFWluMTxK7exQY5vdrqG0FW3w3XqrCdFdQ4aWgQ0BiKpGsSWa5vnnFtBcTkXHBsn1fXUJEQEvhvHWgPwwW00FFHGna87
+        STRIPE_SECRET_KEY: sk_test_
+        STRIPE_WEBHOOK_SECRET: 
         DEFAULT_PROJECT_LIMIT: '3'
         BACKDOOR_USER_EMAIL: mifecoinc@gmail.com
         FRONTEND_URL: http://project-management-app-12847.s3-website-us-east-1.amazonaws.com
