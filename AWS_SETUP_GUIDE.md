@@ -1,3 +1,142 @@
+[{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "LINT_ERROR",
+	"severity": 8,
+	"message": "CFN Lint Error: Traceback (most recent call last):\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 597, in eval_code_async\n    await CodeRunner(\n    ...<9 lines>...\n    .run_async(globals, locals)\n  File \"/lib/python313.zip/_pyodide/_base.py\", line 411, in run_async\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 1, in <module>\n  File \"<exec>\", line 80, in lint_uri\n  File \"/lib/python3.13/site-packages/cfnlint/api.py\", line 163, in lint_by_config\n    return list(runner.run())\n  File \"/lib/python3.13/site-packages/cfnlint/runner/cli.py\", line 246, in run\n    yield from run_template_by_file_paths(self.config, self.rules)\n  File \"/lib/python3.13/site-packages/cfnlint/runner/template/runner.py\", line 213, in run_template_by_file_paths\n    yield from run_template_by_file_path(\n        filename, config, rules, ignore_bad_template\n    )\n  File \"/lib/python3.13/site-packages/cfnlint/runner/template/runner.py\", line 145, in run_template_by_file_path\n    yield from _run_template(filename, template, config, rules)\n  File \"/lib/python3.13/site-packages/cfnlint/runner/template/runner.py\", line 120, in _run_template\n    yield from _dedup(_run_template_per_config(cfn, config, rules))\n  File \"/lib/python3.13/site-packages/cfnlint/runner/template/runner.py\", line 33, in _dedup\n    for match in matches:\n                 ^^^^^^^\n  File \"/lib/python3.13/site-packages/cfnlint/runner/template/runner.py\", line 86, in _run_template_per_config\n    matches = cfn.transform()\n  File \"/lib/python3.13/site-packages/cfnlint/template/template.py\", line 121, in transform\n    results = transform.transform(self)\n  File \"/lib/python3.13/site-packages/cfnlint/template/transforms/transform.py\", line 73, in transform\n    cfn.graph = Graph(cfn)\n                ~~~~~^^^^^\n  File \"/lib/python3.13/site-packages/cfnlint/graph.py\", line 117, in __init__\n    self._add_parameters(cfn)\n    ~~~~~~~~~~~~~~~~~~~~^^^^^\n  File \"/lib/python3.13/site-packages/cfnlint/graph.py\", line 139, in _add_parameters\n    ).items():\n      ^^^^^\nAttributeError: 'NoneType' object has no attribute 'items'\n",
+	"source": "cfn-lint",
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "SECRETSMANAGER_ROTATION_ENABLED_CHECK",
+	"severity": 2,
+	"message": "Reference the Secret Manager Secret resource ID in a AWS::SecretsManager::RotationSchedule resource",
+	"source": "cfn-guard",
+	"startLineNumber": 1,
+	"startColumn": 1,
+	"endLineNumber": 1,
+	"endColumn": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "DYNAMODB_TABLE_MUST_BE_ENCRYPTED",
+	"severity": 2,
+	"message": "Check was not compliant as property [SSESpecification] is missing. Value traversed to [Path=/Resources/UsersTable/Properties[L:71,C:6] Value={\"TableName\":\"project-management-users\",\"AttributeDefinitions\":[{\"AttributeName\":\"id\",\"AttributeType\":\"S\"}],\"KeySchema\":[{\"AttributeName\":\"id\",\"KeyType\":\"HASH\"}],\"BillingMode\":\"PAY_PER_REQUEST\"}]. \n",
+	"source": "cfn-guard",
+	"startLineNumber": 71,
+	"startColumn": 6,
+	"endLineNumber": 71,
+	"endColumn": 6,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "DYNAMODB_TABLE_MUST_BE_ENCRYPTED",
+	"severity": 2,
+	"message": "Check was not compliant as property [SSESpecification.SSEEnabled] to compare from is missing. Value traversed to [Path=/Resources/UsersTable/Properties[L:71,C:6] Value={\"TableName\":\"project-management-users\",\"AttributeDefinitions\":[{\"AttributeName\":\"id\",\"AttributeType\":\"S\"}],\"KeySchema\":[{\"AttributeName\":\"id\",\"KeyType\":\"HASH\"}],\"BillingMode\":\"PAY_PER_REQUEST\"}]. \n",
+	"source": "cfn-guard",
+	"startLineNumber": 71,
+	"startColumn": 6,
+	"endLineNumber": 71,
+	"endColumn": 6,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "DYNAMODB_TABLE_MUST_BE_ENCRYPTED",
+	"severity": 2,
+	"message": "Check was not compliant as property [SSESpecification] is missing. Value traversed to [Path=/Resources/TokensTable/Properties[L:83,C:6] Value={\"TableName\":\"project-management-reset-tokens\",\"AttributeDefinitions\":[{\"AttributeName\":\"token\",\"AttributeType\":\"S\"}],\"KeySchema\":[{\"AttributeName\":\"token\",\"KeyType\":\"HASH\"}],\"BillingMode\":\"PAY_PER_REQUEST\",\"TimeToLiveSpecification\":{\"AttributeName\":\"expiresAt\",\"Enabled\":true}}]. \n",
+	"source": "cfn-guard",
+	"startLineNumber": 83,
+	"startColumn": 6,
+	"endLineNumber": 83,
+	"endColumn": 6,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "DYNAMODB_TABLE_MUST_BE_ENCRYPTED",
+	"severity": 2,
+	"message": "Check was not compliant as property [SSESpecification.SSEEnabled] to compare from is missing. Value traversed to [Path=/Resources/TokensTable/Properties[L:83,C:6] Value={\"TableName\":\"project-management-reset-tokens\",\"AttributeDefinitions\":[{\"AttributeName\":\"token\",\"AttributeType\":\"S\"}],\"KeySchema\":[{\"AttributeName\":\"token\",\"KeyType\":\"HASH\"}],\"BillingMode\":\"PAY_PER_REQUEST\",\"TimeToLiveSpecification\":{\"AttributeName\":\"expiresAt\",\"Enabled\":true}}]. \n",
+	"source": "cfn-guard",
+	"startLineNumber": 83,
+	"startColumn": 6,
+	"endLineNumber": 83,
+	"endColumn": 6,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/lambda/template.yaml",
+	"owner": "_generated_diagnostic_collection_name_#4",
+	"code": "SECRETSMANAGER_USING_CMK",
+	"severity": 2,
+	"message": "Set the KmsKeyId property",
+	"source": "cfn-guard",
+	"startLineNumber": 98,
+	"startColumn": 6,
+	"endLineNumber": 98,
+	"endColumn": 6,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/src/views/ProjectDashboard.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'text' does not exist on type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 320,
+	"startColumn": 39,
+	"endLineNumber": 320,
+	"endColumn": 43,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/src/views/ProjectDashboard.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'text' does not exist on type 'unknown'.",
+	"source": "ts",
+	"startLineNumber": 340,
+	"startColumn": 55,
+	"endLineNumber": 340,
+	"endColumn": 59,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/.github/workflows/deploy-lambda.yml",
+	"owner": "_generated_diagnostic_collection_name_#6",
+	"severity": 4,
+	"message": "Context access might be invalid: AWS_ACCESS_KEY_ID",
+	"startLineNumber": 33,
+	"startColumn": 28,
+	"endLineNumber": 33,
+	"endColumn": 60,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/.github/workflows/deploy-lambda.yml",
+	"owner": "_generated_diagnostic_collection_name_#6",
+	"severity": 4,
+	"message": "Context access might be invalid: AWS_SECRET_ACCESS_KEY",
+	"startLineNumber": 34,
+	"startColumn": 32,
+	"endLineNumber": 34,
+	"endColumn": 68,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/rober/Desktop/project-management-accelerator,-production-version/.github/workflows/deploy-lambda.yml",
+	"owner": "_generated_diagnostic_collection_name_#6",
+	"severity": 4,
+	"message": "Context access might be invalid: LAMBDA_URL",
+	"startLineNumber": 74,
+	"startColumn": 24,
+	"endLineNumber": 74,
+	"endColumn": 45,
+	"origin": "extHost1"
+}]
 # AWS Bedrock Setup Guide
 
 ## Why AWS Bedrock?
