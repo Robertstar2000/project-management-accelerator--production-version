@@ -384,6 +384,72 @@ app.post('/api/bedrock/generate', async (req, res) => {
   }
 });
 
+app.post('/api/test/bedrock', async (req, res) => {
+  try {
+    const client = new BedrockRuntimeClient({
+      region: process.env.AWS_BEDROCK_REGION || 'us-east-1',
+      credentials: {
+        accessKeyId: process.env.AWS_BEDROCK_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_BEDROCK_SECRET_KEY
+      }
+    });
+
+    const payload = {
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 50,
+      messages: [{ role: 'user', content: 'Hello, this is a test' }]
+    };
+
+    const command = new InvokeModelCommand({
+      modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+      contentType: 'application/json',
+      accept: 'application/json',
+      body: JSON.stringify(payload)
+    });
+
+    const response = await client.send(command);
+    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+    
+    res.json({ success: true, message: 'Bedrock test successful', response: responseBody.content[0].text });
+  } catch (error) {
+    console.error('Bedrock test failed:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/test/gemini', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(503).json({ success: false, error: 'Gemini API key not configured' });
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Hello, this is a test' }] }]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ success: false, error: `Gemini error: ${response.status} ${errorText}` });
+    }
+
+    const result = await response.json();
+    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    res.json({ success: true, message: 'Gemini test successful', response: text });
+  } catch (error) {
+    console.error('Gemini test failed:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/gemini/generate', async (req, res) => {
   try {
     const { prompt } = req.body;

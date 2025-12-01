@@ -362,7 +362,7 @@ const runFunctionalTests = (project, saveProject): TestCase[] => {
                     const dataLines = lines.slice(headerIndex + 2);
                     const headers = headerLine.split('|').map(h => h.trim().toLowerCase().replace(/[()]/g, '').replace(/[\s-]+/g, '_'));
                     const data = dataLines.map(row => {
-                        if (!row.includes('|')) return null; 
+                        if (!row.includes('|')) return null;
                         const values = row.split('|').map(v => v.trim());
                         if (values.length !== headers.length) return null;
                         const obj: { [key:string]: string } = {};
@@ -375,7 +375,7 @@ const runFunctionalTests = (project, saveProject): TestCase[] => {
                     }).filter(Boolean);
                     return data as any[];
                 };
-                
+
                 const tasksText = planContent.text.split('## Tasks')[1].split('## Milestones')[0];
                 const parsedTasks = parseMarkdownTable(tasksText);
                 assert(parsedTasks.length === 2, "Should parse 2 tasks from plan");
@@ -386,6 +386,82 @@ const runFunctionalTests = (project, saveProject): TestCase[] => {
                 const parsedMilestones = parseMarkdownTable(milestonesText);
                 assert(parsedMilestones.length === 2, "Should parse 2 milestones");
                 assert('date_yyyy_mm_dd' in parsedMilestones[0], "Should correctly parse milestone date header");
+            }
+        },
+        {
+            name: "LLM: Lambda Bedrock service can generate content",
+            test: async () => {
+                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                try {
+                    console.log('🧪 Testing Lambda Bedrock in UI...');
+                    const response = await fetch(`${backendUrl}/api/bedrock/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: 'Hello from Testing UI!' }),
+                    });
+                    const result = await response.json();
+                    assert(response.ok, `Bedrock request should succeed: ${result.error || 'Unknown error'}`);
+                    assert(result.text && result.text.length > 0, "Should return non-empty text content");
+                } catch (error: any) {
+                    throw new Error(`Lambda Bedrock test failed: ${error.message}`);
+                }
+            }
+        },
+        {
+            name: "LLM: Lambda Gemini service can generate content",
+            test: async () => {
+                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                try {
+                    console.log('🧪 Testing Lambda Gemini in UI...');
+                    const response = await fetch(`${backendUrl}/api/gemini/generate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: 'Hello from Testing UI!' }),
+                    });
+                    const result = await response.json();
+                    assert(response.ok, `Gemini Lambda request should succeed: ${result.error || 'Unknown error'}`);
+                    assert(result.text && result.text.length > 0, "Should return non-empty text content");
+                } catch (error: any) {
+                    throw new Error(`Lambda Gemini test failed: ${error.message}`);
+                }
+            }
+        },
+        {
+            name: "LLM: Test Bedrock credentials and connection",
+            test: async () => {
+                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                try {
+                    console.log('🔍 Testing Bedrock credentials...');
+                    const response = await fetch(`${backendUrl}/api/test/bedrock`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const result = await response.json();
+                    assert(result.success, `Bedrock test should succeed: ${result.error || 'Unknown error'}`);
+                    assert(result.response && result.response.length > 0, "Should return test response from Bedrock");
+                    console.log('✅ Bedrock test response:', result.response);
+                } catch (error: any) {
+                    throw new Error(`Bedrock credentials test failed: ${error.message}`);
+                }
+            }
+        },
+        {
+            name: "LLM: Test Gemini API key and connection",
+            test: async () => {
+                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+                try {
+                    console.log('🔍 Testing Gemini API key...');
+                    const response = await fetch(`${backendUrl}/api/test/gemini`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const result = await response.json();
+                    assert(result.success, `Gemini test should succeed: ${result.error || 'Unknown error'}`);
+                    assert(result.response && result.response.length > 0, "Should return test response from Gemini");
+                    console.log('✅ Gemini test response:', result.response);
+                } catch (error: any) {
+                    throw new Error(`Gemini API key test failed: ${error.message}`);
+                }
             }
         }
     ];
