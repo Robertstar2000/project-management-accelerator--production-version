@@ -182,35 +182,39 @@ const App = () => {
   
     (async () => {
       let initialized = false;
-      
-      // Try AWS Bedrock first (primary)
-      console.log('🔄 Trying AWS Bedrock (primary)...');
+
+      // Try Gemini via Lambda first (primary)
+      console.log('🔄 Trying Gemini via Lambda (primary)...');
       try {
-        initialized = await initializeAwsBedrock();
-        if (initialized) return;
-      } catch (e) {
-        console.warn('⚠️ AWS Bedrock failed:', e);
-      }
-      
-      // Fallback to Gemini via Lambda (uses VITE_GEMINI_API_KEY from Lambda env)
-      console.log('🔄 Trying Gemini via Lambda (fallback)...');
-      try {
-        const geminiService = new GeminiLambdaService();
-        const testResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'}/api/gemini/generate`, {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+        const testResponse = await fetch(`${backendUrl}/api/gemini/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: 'test' }),
-          signal: AbortSignal.timeout(2000)
+          signal: AbortSignal.timeout(3000)
         });
-        
+
         if (testResponse.ok) {
+          const geminiService = new GeminiLambdaService();
           setAi(geminiService);
           setApiKeyStatus('gemini-lambda');
           console.log('✅ Gemini Lambda connected');
           return;
+        } else {
+          const errorText = await testResponse.text();
+          console.warn('⚠️ Gemini Lambda unavailable:', testResponse.status, errorText);
         }
-      } catch (e) {
-        console.warn('⚠️ Gemini Lambda failed:', e);
+      } catch (e: any) {
+        console.warn('⚠️ Gemini Lambda failed:', e.message);
+      }
+
+      // Fallback to AWS Bedrock
+      console.log('🔄 Trying AWS Bedrock (fallback)...');
+      try {
+        initialized = await initializeAwsBedrock();
+        if (initialized) return;
+      } catch (e: any) {
+        console.warn('⚠️ AWS Bedrock failed:', e.message);
       }
       
       // Fallback to user's local Gemini key
@@ -481,6 +485,103 @@ const App = () => {
     setIsAccountSettingsOpen(false);
     handleLogout();
   }, [handleLogout]);
+
+  // LLM Testing Functions (accessible via window.testLLM)
+  const testLambdaBedrock = useCallback(async () => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    try {
+      console.log('🧪 Testing Lambda Bedrock...');
+      const response = await fetch(`${backendUrl}/api/bedrock/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Hello, test Bedrock!' }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        console.log('✅ Lambda Bedrock SUCCESS:', result.text);
+        return result.text;
+      } else {
+        console.error('❌ Lambda Bedrock FAILED:', result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Lambda Bedrock ERROR:', error);
+      return null;
+    }
+  }, []);
+
+  const testLambdaGemini = useCallback(async () => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    try {
+      console.log('🧪 Testing Lambda Gemini...');
+      const response = await fetch(`${backendUrl}/api/gemini/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Hello, test Gemini!' }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        console.log('✅ Lambda Gemini SUCCESS:', result.text);
+        return result.text;
+      } else {
+        console.error('❌ Lambda Gemini FAILED:', result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Lambda Gemini ERROR:', error);
+      return null;
+    }
+  }, []);
+
+  const testDirectGemini = useCallback(async () => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    try {
+      console.log('🧪 Testing Direct Gemini...');
+      if (!apiKey) {
+        console.error('❌ Direct Gemini FAILED: No VITE_GEMINI_API_KEY in .env.local');
+        return null;
+      }
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Hello, test Direct Gemini!' }] }]
+          })
+        }
+      );
+      const result = await response.json();
+      if (response.ok && result.candidates?.[0]?.content?.parts?.[0]?.text) {
+        console.log('✅ Direct Gemini SUCCESS:', result.candidates[0].content.parts[0].text);
+        return result.candidates[0].content.parts[0].text;
+      } else {
+        console.error('❌ Direct Gemini FAILED:', result.error);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Direct Gemini ERROR:', error);
+      return null;
+    }
+  }, []);
+
+  const testAllLLMs = useCallback(async () => {
+    console.log('🚀 Starting LLM Tests...');
+    await testDirectGemini();
+    await testLambdaGemini();
+    await testLambdaBedrock();
+    console.log('✅ LLM Tests Complete');
+  }, [testDirectGemini, testLambdaGemini, testLambdaBedrock]);
+
+  // Make testing functions available globally
+  useEffect(() => {
+    (window as any).testLLM = {
+      testAll: testAllLLMs,
+      testBedrock: testLambdaBedrock,
+      testGeminiLambda: testLambdaGemini,
+      testGeminiDirect: testDirectGemini
+    };
+  }, [testAllLLMs, testLambdaBedrock, testLambdaGemini, testDirectGemini]);
 
   useEffect(() => {
     if (currentUser) {
