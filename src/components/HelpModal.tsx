@@ -32,13 +32,36 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        if (isOpen) {
+            window.addEventListener('keydown', handleEsc);
+        }
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
     const parsedContent = useMemo(() => parseMarkdown(content), [content]);
 
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content help-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div
+                className="modal-content help-modal-content"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="help-modal-title"
+                tabIndex={-1}
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <h2 id="help-modal-title" style={{ margin: 0 }}>Help & Documentation</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close">&times;</button>
+                </div>
                 <div className="help-modal-body">
                     {isLoading ? <p>Loading help...</p> : parsedContent}
                 </div>
