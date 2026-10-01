@@ -1330,6 +1330,18 @@ export const GlobalStyles = `
   .notification-bell {
     position: relative;
     cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0.25rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .notification-bell:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
   }
   .notification-badge {
     position: absolute;
@@ -1370,9 +1382,21 @@ export const GlobalStyles = `
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     transition: background-color 0.2s ease;
+    background: transparent;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    display: block;
   }
-  .notification-item:hover {
+  .notification-item:hover,
+  .notification-item:focus-visible {
     background-color: var(--background-color);
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
   }
   .notification-item.unread {
     background-color: rgba(0, 242, 255, 0.05);

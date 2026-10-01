@@ -30,9 +30,18 @@ export const Header: React.FC<HeaderProps> = ({
                 setIsDropdownOpen(false);
             }
         };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isDropdownOpen) {
+                setIsDropdownOpen(false);
+            }
+        };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isDropdownOpen]);
 
     return (
         <header style={{ padding: '1rem 5%', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
@@ -42,22 +51,39 @@ export const Header: React.FC<HeaderProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 {currentUser && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <div className="notification-bell" title="Notifications" aria-label="Notifications" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+                        <div style={{ position: 'relative' }} ref={dropdownRef}>
+                            <button
+                                type="button"
+                                className="notification-bell"
+                                aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+                                aria-expanded={isDropdownOpen}
+                                aria-haspopup="true"
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                                {unreadCount > 0 && <span className="notification-badge" aria-hidden="true">{unreadCount}</span>}
+                            </button>
                             {isDropdownOpen && (
-                                <div className="notifications-dropdown" ref={dropdownRef}>
+                                <div className="notifications-dropdown" role="menu">
                                     <div className="notifications-header">
                                         <h4>Notifications</h4>
-                                        {unreadCount > 0 && <button className="button button-small" onClick={onMarkAllRead}>Mark all read</button>}
+                                        {unreadCount > 0 && <button type="button" className="button button-small" onClick={onMarkAllRead}>Mark all read</button>}
                                     </div>
                                     <div className="notifications-list">
                                         {notifications.length > 0 ? (
                                             notifications.map(notif => (
-                                                <div key={notif.id} className={`notification-item ${!notif.read ? 'unread' : ''}`} onClick={() => onNotificationClick(notif)}>
+                                                <button
+                                                    key={notif.id}
+                                                    type="button"
+                                                    className={`notification-item ${!notif.read ? 'unread' : ''}`}
+                                                    onClick={() => {
+                                                        onNotificationClick(notif);
+                                                        setIsDropdownOpen(false);
+                                                    }}
+                                                >
                                                     <p>{notif.text}</p>
                                                     <small style={{color: 'var(--secondary-text)'}}>{new Date(notif.timestamp).toLocaleString()}</small>
-                                                </div>
+                                                </button>
                                             ))
                                         ) : (
                                             <p style={{padding: '1rem', textAlign: 'center', color: 'var(--secondary-text)'}}>No new notifications.</p>
