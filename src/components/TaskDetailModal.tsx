@@ -44,6 +44,18 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
         setCurrentTask(task);
     }, [task]);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onSave(currentTask);
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose, onSave, currentTask]);
+
     if (!isOpen) return null;
 
     const handleFieldChange = (field: keyof Task, value: any) => {
@@ -93,7 +105,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
 
     return (
         <div className="modal-overlay" onClick={handleSave}>
-            <div className="modal-content task-detail-modal" onClick={e => e.stopPropagation()}>
+            <div
+                className="modal-content task-detail-modal"
+                onClick={e => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="task-detail-title"
+                tabIndex={-1}
+            >
                 <div className="task-detail-header">
                     <h2 id="task-detail-title">{currentTask.name}</h2>
                     <button onClick={handleSave} className="button-close" aria-label="Close">&times;</button>
@@ -137,7 +156,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                                 ))}
                             </ul>
                              <button onClick={() => attachmentInputRef.current?.click()} className="button button-small" style={{marginTop: '0.5rem'}}>Add Attachment</button>
-                             <input type="file" ref={attachmentInputRef} onChange={handleFileChange} style={{display: 'none'}} />
+                             <input type="file" ref={attachmentInputRef} onChange={handleFileChange} style={{display: 'none'}} aria-label="Upload attachment" />
                         </div>
 
                         <div className="comments-section">
