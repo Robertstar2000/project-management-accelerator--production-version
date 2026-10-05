@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as authService from '../utils/authService';
 import { User } from '../types';
 
@@ -13,6 +13,27 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
     const [confirmText, setConfirmText] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState('');
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setConfirmText('');
+            setError('');
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -39,10 +60,30 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
         }
     };
 
+    const isConfirmValid = confirmText === 'DELETE';
+
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <h2>Account Settings</h2>
+            <div
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="account-settings-title"
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 id="account-settings-title" style={{ margin: 0 }}>Account Settings</h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="button-close"
+                        aria-label="Close account settings"
+                    >
+                        &times;
+                    </button>
+                </div>
                 
                 <div style={{ marginBottom: '2rem' }}>
                     <h3 style={{ color: 'var(--secondary-text)', fontSize: '1rem', marginBottom: '0.5rem' }}>Account Information</h3>
@@ -66,21 +107,23 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             value={confirmText} 
                             onChange={(e) => setConfirmText(e.target.value)}
                             placeholder="DELETE"
+                            autoComplete="off"
                         />
                     </div>
                     
                     <button 
+                        type="button"
                         onClick={handleDeleteAccount} 
                         className="button" 
-                        style={{ background: 'var(--error-color)', color: 'white' }}
-                        disabled={isDeleting}
+                        style={{ background: 'var(--error-color)', color: 'white', opacity: !isConfirmValid || isDeleting ? 0.6 : 1, cursor: !isConfirmValid || isDeleting ? 'not-allowed' : 'pointer' }}
+                        disabled={isDeleting || !isConfirmValid}
                     >
                         {isDeleting ? 'Deleting...' : 'Delete My Account'}
                     </button>
                 </div>
 
                 <div className="modal-actions" style={{ marginTop: '2rem' }}>
-                    <button onClick={onClose} className="button">Close</button>
+                    <button type="button" onClick={onClose} className="button">Close</button>
                 </div>
             </div>
         </div>
