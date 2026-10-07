@@ -77,7 +77,21 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({ projects, currentUser, o
                     {myTasks.map(task => {
                          const isOverdue = new Date(task.endDate) < new Date();
                          return (
-                            <tr key={task.id} onClick={() => handleTaskClick(task)} className={isOverdue ? 'task-row-overdue' : ''} style={{cursor: 'pointer'}}>
+                            <tr
+                                key={task.id}
+                                onClick={() => handleTaskClick(task)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleTaskClick(task);
+                                    }
+                                }}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`Open task details for ${task.name} in project ${task.projectName}`}
+                                className={isOverdue ? 'task-row-overdue' : ''}
+                                style={{cursor: 'pointer'}}
+                            >
                                 <td>{task.name}</td>
                                 <td>{task.projectName}</td>
                                 <td>{task.status}</td>
