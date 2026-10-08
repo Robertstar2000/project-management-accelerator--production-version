@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { parseMarkdown } from '../utils/markdownParser';
 
 interface AiReportModalProps {
@@ -11,6 +11,25 @@ interface AiReportModalProps {
 
 export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, title, content, onAddToDocuments }) => {
     const [copyButtonText, setCopyButtonText] = useState('Copy to Clipboard');
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -46,10 +65,19 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, t
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" style={{ maxWidth: '800px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div
+                className="modal-content"
+                style={{ maxWidth: '800px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                onClick={e => e.stopPropagation()}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="ai-report-title"
+            >
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0}}>
                     <h2 id="ai-report-title">{title}</h2>
-                    <button onClick={onClose} className="button-close" aria-label="Close">&times;</button>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close AI report">&times;</button>
                 </div>
                 
                 <div className="ai-report-body" style={{ flexGrow: 1, overflowY: 'auto', background: 'var(--background-color)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border-color)'}}>
