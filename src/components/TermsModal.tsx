@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface TermsModalProps {
     isOpen: boolean;
@@ -6,12 +6,44 @@ interface TermsModalProps {
 }
 
 export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
-                <h2>Terms of Service & Privacy Policy</h2>
+            <div
+                className="modal-content"
+                style={{ maxWidth: '800px', maxHeight: '80vh', overflow: 'auto' }}
+                onClick={(e) => e.stopPropagation()}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="terms-modal-title"
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
+                    <h2 id="terms-modal-title" style={{ margin: 0 }}>Terms of Service & Privacy Policy</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close terms of service">&times;</button>
+                </div>
                 <div style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
                     <p><strong>Last Updated:</strong> {new Date().toLocaleDateString()}</p>
                     
