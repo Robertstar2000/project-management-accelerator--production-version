@@ -490,10 +490,17 @@ export const GlobalStyles = `
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+    width: 100%;
   }
-  .template-card:hover {
+  .template-card:hover,
+  .template-card:focus-visible {
     border-color: var(--accent-color);
     background-color: rgba(0, 242, 255, 0.05);
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
   }
   .template-card.selected {
     border-color: var(--accent-color);
