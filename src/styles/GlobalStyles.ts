@@ -1333,6 +1333,28 @@ export const GlobalStyles = `
       margin: 1rem 0;
   }
 
+  /* Header Title Button */
+  .header-title-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    margin: -0.2rem -0.4rem;
+    border-radius: 4px;
+    text-align: left;
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+  .header-title-btn:hover {
+    color: var(--accent-color);
+  }
+  .header-title-btn:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+  }
+
   /* Notification Bell */
   .notification-bell {
     position: relative;
