@@ -132,9 +132,9 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content project-manager-modal" onClick={(e) => e.stopPropagation()} ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <h2 id="modal-title">Projects</h2>
-        <div className="modal-tabs">
-            <button onClick={() => setActiveTab('select')} className={activeTab === 'select' ? 'active' : ''}>Active Projects</button>
-            <button onClick={() => setActiveTab('create')} className={activeTab === 'create' ? 'active' : ''}>Create New</button>
+        <div className="modal-tabs" role="tablist">
+            <button type="button" role="tab" onClick={() => setActiveTab('select')} className={activeTab === 'select' ? 'active' : ''} aria-selected={activeTab === 'select'}>Active Projects</button>
+            <button type="button" role="tab" onClick={() => setActiveTab('create')} className={activeTab === 'create' ? 'active' : ''} aria-selected={activeTab === 'create'}>Create New</button>
         </div>
         {activeTab === 'select' && (
             <div className="project-list-section">
@@ -199,18 +199,24 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
 
               <h3>5. Discipline (Template)</h3>
               <div className="form-group mode-switch">
-                  <button type="button" onClick={() => setCreationMode('template')} className={creationMode === 'template' ? 'active' : ''}>Use a Template</button>
-                  <button type="button" onClick={() => setCreationMode('custom')} className={creationMode === 'custom' ? 'active' : ''}>Create My Own</button>
+                  <button type="button" onClick={() => setCreationMode('template')} className={creationMode === 'template' ? 'active' : ''} aria-pressed={creationMode === 'template'}>Use a Template</button>
+                  <button type="button" onClick={() => setCreationMode('custom')} className={creationMode === 'custom' ? 'active' : ''} aria-pressed={creationMode === 'custom'}>Create My Own</button>
               </div>
 
               {creationMode === 'template' && (
                   <div className="form-group">
                       <div className="template-selection-grid">
                         {TEMPLATES.map(template => (
-                          <div key={template.id} className={`template-card ${selectedTemplateId === template.id ? 'selected' : ''}`} onClick={() => setSelectedTemplateId(template.id)}>
+                          <button
+                            key={template.id}
+                            type="button"
+                            className={`template-card ${selectedTemplateId === template.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedTemplateId(template.id)}
+                            aria-pressed={selectedTemplateId === template.id}
+                          >
                             <h4>{template.name}</h4>
                             <p>{template.discipline}</p>
-                          </div>
+                          </button>
                         ))}
                       </div>
                   </div>
