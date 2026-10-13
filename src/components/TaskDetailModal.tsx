@@ -39,10 +39,17 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
     const [currentTask, setCurrentTask] = useState<Task>(task);
     const [newComment, setNewComment] = useState('');
     const attachmentInputRef = useRef<HTMLInputElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setCurrentTask(task);
     }, [task]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -108,6 +115,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
             <div
                 className="modal-content task-detail-modal"
                 onClick={e => e.stopPropagation()}
+                ref={modalRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="task-detail-title"
@@ -115,14 +123,15 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
             >
                 <div className="task-detail-header">
                     <h2 id="task-detail-title">{currentTask.name}</h2>
-                    <button onClick={handleSave} className="button-close" aria-label="Close">&times;</button>
+                    <button type="button" onClick={handleSave} className="button-close" aria-label="Close task details">&times;</button>
                 </div>
 
                 <div className="task-detail-body">
                     <div className="task-detail-main">
                         <div className="form-group">
-                            <label>Description</label>
+                            <label htmlFor="task-description">Description</label>
                             <textarea
+                                id="task-description"
                                 value={currentTask.description || ''}
                                 onChange={e => handleFieldChange('description', e.target.value)}
                                 rows={4}
@@ -131,8 +140,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                         </div>
                         
                          <div className="form-group">
-                            <label>Recurrence</label>
+                            <label htmlFor="task-recurrence">Recurrence</label>
                             <select
+                                id="task-recurrence"
                                 value={currentTask.recurrence?.interval || 'none'}
                                 onChange={e => handleFieldChange('recurrence', { interval: e.target.value as any })}
                                 className="form-group"
@@ -155,7 +165,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                                     </li>
                                 ))}
                             </ul>
-                             <button onClick={() => attachmentInputRef.current?.click()} className="button button-small" style={{marginTop: '0.5rem'}}>Add Attachment</button>
+                             <button type="button" onClick={() => attachmentInputRef.current?.click()} className="button button-small" style={{marginTop: '0.5rem'}}>Add Attachment</button>
                              <input type="file" ref={attachmentInputRef} onChange={handleFileChange} style={{display: 'none'}} aria-label="Upload attachment" />
                         </div>
 
@@ -172,12 +182,14 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                             </div>
                             <div className="comment-form">
                                 <textarea
+                                    id="task-comment-input"
+                                    aria-label="Add a comment"
                                     value={newComment}
                                     onChange={e => setNewComment(e.target.value)}
                                     placeholder="Add a comment... Use @ to mention a team member."
                                     rows={3}
                                 />
-                                <button onClick={handleAddComment} className="button button-primary">Post Comment</button>
+                                <button type="button" onClick={handleAddComment} className="button button-primary">Post Comment</button>
                             </div>
                         </div>
                     </div>
@@ -208,7 +220,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                 </div>
 
                 <div className="modal-actions" style={{ justifyContent: 'flex-end', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)'}}>
-                    <button onClick={handleSave} className="button button-primary">Save & Close</button>
+                    <button type="button" onClick={handleSave} className="button button-primary">Save & Close</button>
                 </div>
             </div>
         </div>
