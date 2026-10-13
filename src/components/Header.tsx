@@ -45,8 +45,15 @@ export const Header: React.FC<HeaderProps> = ({
 
     return (
         <header style={{ padding: '1rem 5%', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <h1 style={{ fontSize: '1.2rem', letterSpacing: '1px', cursor: 'pointer', fontWeight: 500 }} onClick={onHomeClick}>
-                Project Accelerator - Agentic Project Execution
+            <h1 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '1px', fontWeight: 500 }}>
+                <button
+                    type="button"
+                    className="header-title-btn"
+                    onClick={onHomeClick}
+                    aria-label="Project Accelerator home"
+                >
+                    Project Accelerator - Agentic Project Execution
+                </button>
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 {currentUser && (
