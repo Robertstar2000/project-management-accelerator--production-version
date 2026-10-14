@@ -14,11 +14,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccessMessage('');
+        setIsLoading(true);
         try {
             if (viewMode === 'login') {
                 const user = await authService.login(email, password);
@@ -44,6 +46,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             }
         } catch (err: any) {
             setError(err.message || 'Operation failed. Is the backend running?');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -70,8 +74,18 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
                             <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required />
                         </div>
                     )}
-                    <button type="submit" className="button button-primary" style={{ width: '100%', marginBottom: '1rem' }}>
-                        {viewMode === 'login' ? 'Login' : viewMode === 'signup' ? 'Sign Up' : 'Send Reset Email'}
+                    <button type="submit" className="button button-primary" style={{ width: '100%', marginBottom: '1rem' }} disabled={isLoading}>
+                        {isLoading
+                            ? viewMode === 'login'
+                                ? 'Logging in...'
+                                : viewMode === 'signup'
+                                ? 'Signing up...'
+                                : 'Sending...'
+                            : viewMode === 'login'
+                            ? 'Login'
+                            : viewMode === 'signup'
+                            ? 'Sign Up'
+                            : 'Send Reset Email'}
                     </button>
                     {viewMode === 'login' && (
                         <p style={{ textAlign: 'center', marginBottom: '1rem' }}>
