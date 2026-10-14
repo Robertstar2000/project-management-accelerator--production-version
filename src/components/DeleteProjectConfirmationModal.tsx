@@ -62,6 +62,8 @@ export const DeleteProjectConfirmationModal: React.FC<DeleteProjectConfirmationM
                         className="button button-danger"
                         onClick={onConfirm}
                         disabled={!isConfirmed}
+                        aria-disabled={!isConfirmed}
+                        title={!isConfirmed ? `Please type "${projectName}" to enable deletion` : undefined}
                     >
                         Delete Entire Project
                     </button>
