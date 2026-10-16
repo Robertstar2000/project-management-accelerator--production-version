@@ -33,41 +33,49 @@ export const DeleteProjectConfirmationModal: React.FC<DeleteProjectConfirmationM
 
     if (!isOpen) return null;
 
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isConfirmed) {
+            onConfirm();
+        }
+    };
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()} ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
-                <h2 id="delete-modal-title" style={{ color: 'var(--error-color)' }}>Warning: Project Deletion</h2>
-                <p className="modal-warning-text">
-                    You are about to permanently delete the project "<strong>{projectName}</strong>". All of its associated data will be lost. This action cannot be undone.
-                </p>
-                <p style={{ color: 'var(--secondary-text)', marginBottom: '1.5rem' }}>
-                    To proceed, please type the project name below to confirm.
-                </p>
-                <div className="form-group">
-                    <label htmlFor="deleteConfirmationInput">Project Name</label>
-                    <input
-                        id="deleteConfirmationInput"
-                        ref={inputRef}
-                        type="text"
-                        value={confirmationInput}
-                        onChange={(e) => setConfirmationInput(e.target.value)}
-                        placeholder={projectName}
-                        autoComplete="off"
-                    />
-                </div>
-                <div className="modal-actions">
-                    <button type="button" className="button" onClick={onClose}>Cancel</button>
-                    <button
-                        type="button"
-                        className="button button-danger"
-                        onClick={onConfirm}
-                        disabled={!isConfirmed}
-                        aria-disabled={!isConfirmed}
-                        title={!isConfirmed ? `Please type "${projectName}" to enable deletion` : undefined}
-                    >
-                        Delete Entire Project
-                    </button>
-                </div>
+                <form onSubmit={handleSubmit}>
+                    <h2 id="delete-modal-title" style={{ color: 'var(--error-color)' }}>Warning: Project Deletion</h2>
+                    <p className="modal-warning-text">
+                        You are about to permanently delete the project "<strong>{projectName}</strong>". All of its associated data will be lost. This action cannot be undone.
+                    </p>
+                    <p style={{ color: 'var(--secondary-text)', marginBottom: '1.5rem' }}>
+                        To proceed, please type the project name below to confirm.
+                    </p>
+                    <div className="form-group">
+                        <label htmlFor="deleteConfirmationInput">Project Name</label>
+                        <input
+                            id="deleteConfirmationInput"
+                            ref={inputRef}
+                            type="text"
+                            value={confirmationInput}
+                            onChange={(e) => setConfirmationInput(e.target.value)}
+                            placeholder={projectName}
+                            autoComplete="off"
+                        />
+                    </div>
+                    <div className="modal-actions">
+                        <button type="button" className="button" onClick={onClose}>Cancel</button>
+                        <button
+                            type="submit"
+                            className="button button-danger"
+                            disabled={!isConfirmed}
+                            aria-disabled={!isConfirmed}
+                            title={!isConfirmed ? `Please type "${projectName}" to enable deletion` : undefined}
+                        >
+                            Delete Entire Project
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

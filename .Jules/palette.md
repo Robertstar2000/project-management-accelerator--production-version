@@ -5,3 +5,7 @@
 ## 2026-10-06 - Modal Accessibility Standard in Custom React Components
 **Learning:** Custom modals in this app lack a modal framework, so each modal must explicitly include `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, an `Escape` key event listener, initial focus management with `ref`, and an `aria-label` close button.
 **Action:** Always check custom modals for these 5 core modal accessibility requirements when adding or updating modal components.
+
+## 2026-10-16 - Form Semantics in Confirmation Modals
+**Learning:** Modals with text input confirmation (like project deletion or key matching) often render plain `div` containers, blocking users from submitting via the `Enter` key after typing the required confirmation text.
+**Action:** Wrap modal inputs and action buttons in a `<form>` with an `onSubmit` handler that validates conditions (`isConfirmed`) before calling the confirmation callback.
