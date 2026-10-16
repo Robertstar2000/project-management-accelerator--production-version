@@ -104,7 +104,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                         onClick={handleDeleteAccount} 
                         className="button" 
                         style={{ background: 'var(--error-color)', color: 'white' }}
-                        disabled={isDeleting}
+                        disabled={isDeleting || confirmText !== 'DELETE'}
+                        aria-disabled={isDeleting || confirmText !== 'DELETE'}
+                        title={confirmText !== 'DELETE' ? 'Please type DELETE to confirm deletion' : undefined}
                     >
                         {isDeleting ? 'Deleting...' : 'Delete My Account'}
                     </button>
