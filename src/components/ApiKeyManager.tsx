@@ -23,7 +23,7 @@ export const ApiKeyManager = ({ status, onSetKey }) => {
           <h3>API Key Access</h3>
           <p style={{color: 'var(--success-color)'}}>Your API key is saved in this browser's local storage.</p>
         </div>
-        <button className="button" onClick={() => { onSetKey(null); }}>Clear Key</button>
+        <button type="button" className="button" onClick={() => { onSetKey(null); }} aria-label="Clear API Key">Clear Key</button>
       </div>
     ),
     none: (
