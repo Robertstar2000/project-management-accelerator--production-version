@@ -35,7 +35,11 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
 
     if (!isOpen) return null;
 
-    const handleDeleteAccount = async () => {
+    const handleDeleteAccount = async (e?: React.FormEvent) => {
+        if (e) {
+            e.preventDefault();
+        }
+
         if (confirmText !== 'DELETE') {
             setError('Please type DELETE to confirm');
             return;
@@ -80,7 +84,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                     <p><strong>Email:</strong> {currentUser.email}</p>
                 </div>
 
-                <div style={{ padding: '1.5rem', background: 'var(--error-background)', border: '1px solid var(--error-color)', borderRadius: '8px' }}>
+                <form onSubmit={handleDeleteAccount} style={{ padding: '1.5rem', background: 'var(--error-background)', border: '1px solid var(--error-color)', borderRadius: '8px' }}>
                     <h3 style={{ color: 'var(--error-color)', marginBottom: '1rem' }}>Delete Account</h3>
                     <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
                         This will permanently delete your account, remove all credentials from our servers and Stripe, and clear all local data. This action cannot be undone.
@@ -96,12 +100,12 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                             value={confirmText} 
                             onChange={(e) => setConfirmText(e.target.value)}
                             placeholder="DELETE"
+                            autoComplete="off"
                         />
                     </div>
                     
                     <button 
-                        type="button"
-                        onClick={handleDeleteAccount} 
+                        type="submit"
                         className="button" 
                         style={{ background: 'var(--error-color)', color: 'white' }}
                         disabled={isDeleting || confirmText !== 'DELETE'}
@@ -110,7 +114,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({ isOp
                     >
                         {isDeleting ? 'Deleting...' : 'Delete My Account'}
                     </button>
-                </div>
+                </form>
 
                 <div className="modal-actions" style={{ marginTop: '2rem' }}>
                     <button type="button" onClick={onClose} className="button">Close</button>
