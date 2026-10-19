@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { logAction } from '../utils/logging';
 
 const parseDeploymentPlan = (plan, allTasks, allSprints) => {
@@ -61,9 +61,11 @@ const parseDeploymentPlan = (plan, allTasks, allSprints) => {
 export const ChangeDeploymentModal = ({ isOpen, onClose, deploymentPlan, project, onUpdateProject }) => {
     const [steps, setSteps] = useState([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
             const { affectedDocs, taskChanges } = parseDeploymentPlan(deploymentPlan, project.tasks, project.sprints);
             const docSteps = affectedDocs.map(doc => ({ type: 'document', target: doc }));
             const parsedSteps = taskChanges.map(change => ({ type: 'task', ...change }));
@@ -76,6 +78,18 @@ export const ChangeDeploymentModal = ({ isOpen, onClose, deploymentPlan, project
             setCurrentStepIndex(0);
         }
     }, [isOpen, deploymentPlan, project.tasks]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
     const handleApply = () => {
         const step = steps[currentStepIndex];
@@ -165,8 +179,19 @@ export const ChangeDeploymentModal = ({ isOpen, onClose, deploymentPlan, project
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content change-deployment-modal" onClick={e => e.stopPropagation()}>
-                <h2>Deploying Change</h2>
+            <div
+                className="modal-content change-deployment-modal"
+                onClick={e => e.stopPropagation()}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="change-deployment-title"
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
+                    <h2 id="change-deployment-title" style={{ margin: 0 }}>Deploying Change</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close change deployment">&times;</button>
+                </div>
                 {totalActionableSteps > 0 && (
                     <p className="deployment-progress">
                         Applying Task Modifications: Step {currentActionableStep} of {totalActionableSteps}
