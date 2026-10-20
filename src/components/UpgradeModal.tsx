@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -8,6 +8,26 @@ interface UpgradeModalProps {
 }
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, currentCount, limit }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleUpgrade = (plan: string) => {
@@ -28,8 +48,20 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose, cur
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
-                <h2>Upgrade Your Plan</h2>
+            <div
+                className="modal-content"
+                onClick={(e) => e.stopPropagation()}
+                style={{ maxWidth: '700px' }}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="upgrade-modal-title"
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <h2 id="upgrade-modal-title" style={{ margin: 0 }}>Upgrade Your Plan</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close upgrade modal">&times;</button>
+                </div>
                 <p style={{ color: 'var(--secondary-text)', marginBottom: '2rem' }}>
                     You've reached your project limit ({currentCount}/{limit}). Upgrade to create more projects.
                 </p>
