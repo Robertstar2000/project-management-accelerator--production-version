@@ -83,6 +83,13 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
         }
     };
 
+    const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            handleAddComment();
+        }
+    };
+
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -186,10 +193,20 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                                     aria-label="Add a comment"
                                     value={newComment}
                                     onChange={e => setNewComment(e.target.value)}
-                                    placeholder="Add a comment... Use @ to mention a team member."
+                                    onKeyDown={handleCommentKeyDown}
+                                    placeholder="Add a comment... Use @ to mention a team member. (Ctrl+Enter to post)"
                                     rows={3}
                                 />
-                                <button type="button" onClick={handleAddComment} className="button button-primary">Post Comment</button>
+                                <button
+                                    type="button"
+                                    onClick={handleAddComment}
+                                    className="button button-primary"
+                                    disabled={!newComment.trim()}
+                                    aria-disabled={!newComment.trim()}
+                                    title={!newComment.trim() ? "Type a comment to post" : "Post comment (Ctrl+Enter)"}
+                                >
+                                    Post Comment
+                                </button>
                             </div>
                         </div>
                     </div>
