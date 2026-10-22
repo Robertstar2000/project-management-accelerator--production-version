@@ -55,7 +55,19 @@ export const MyWorkView: React.FC<MyWorkViewProps> = ({ projects, currentUser, o
     };
 
     if (myTasks.length === 0) {
-        return null;
+        return (
+            <section className="tool-card">
+                <h2 className="subsection-title">My Work</h2>
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--secondary-text)' }}>
+                    <p style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '0.5rem', color: 'var(--primary-text)' }}>
+                        ✨ You're all caught up!
+                    </p>
+                    <p style={{ margin: 0 }}>
+                        No active tasks assigned to you right now. Select a project below or create a new one to get started.
+                    </p>
+                </div>
+            </section>
+        );
     }
 
     return (
