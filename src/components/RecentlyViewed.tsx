@@ -22,7 +22,7 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ projects, onSele
         onSelectProject(project);
     };
     
-    const handleDelete = (e, project) => {
+    const handleDelete = (e: React.MouseEvent, project: Project) => {
         e.stopPropagation();
         if (disabled) return;
         onRequestDelete(project);
@@ -38,9 +38,11 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ projects, onSele
                             className="project-card"
                             onClick={() => handleSelect(p)}
                             role="button"
-                            tabIndex={disabled ? -1 : 0}
+                            tabIndex={0}
                             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSelect(p)}
                             aria-disabled={disabled}
+                            aria-label={`Open project ${p.name}`}
+                            title={disabled ? 'API Key required to open project' : `Open ${p.name}`}
                         >
                             <h3>{p.name}</h3>
                             <p>{p.discipline}</p>
@@ -50,6 +52,7 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ projects, onSele
                           onClick={(e) => handleDelete(e, p)}
                           disabled={disabled}
                           aria-label={`Delete project ${p.name}`}
+                          title={disabled ? 'API Key required to delete project' : `Delete ${p.name}`}
                         >
                           Delete
                         </button>
