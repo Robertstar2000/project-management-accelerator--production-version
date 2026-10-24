@@ -48,7 +48,7 @@ export const DeleteProjectConfirmationModal: React.FC<DeleteProjectConfirmationM
                     <p className="modal-warning-text">
                         You are about to permanently delete the project "<strong>{projectName}</strong>". All of its associated data will be lost. This action cannot be undone.
                     </p>
-                    <p style={{ color: 'var(--secondary-text)', marginBottom: '1.5rem' }}>
+                    <p id="delete-modal-instructions" style={{ color: 'var(--secondary-text)', marginBottom: '1.5rem' }}>
                         To proceed, please type the project name below to confirm.
                     </p>
                     <div className="form-group">
@@ -61,6 +61,8 @@ export const DeleteProjectConfirmationModal: React.FC<DeleteProjectConfirmationM
                             onChange={(e) => setConfirmationInput(e.target.value)}
                             placeholder={projectName}
                             autoComplete="off"
+                            aria-describedby="delete-modal-instructions"
+                            aria-invalid={confirmationInput.length > 0 && !isConfirmed}
                         />
                     </div>
                     <div className="modal-actions">
