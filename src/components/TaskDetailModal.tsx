@@ -191,22 +191,28 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                                 <textarea
                                     id="task-comment-input"
                                     aria-label="Add a comment"
+                                    aria-describedby="comment-hint"
                                     value={newComment}
                                     onChange={e => setNewComment(e.target.value)}
                                     onKeyDown={handleCommentKeyDown}
-                                    placeholder="Add a comment... Use @ to mention a team member. (Ctrl+Enter to post)"
+                                    placeholder="Add a comment... Use @ to mention a team member."
                                     rows={3}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={handleAddComment}
-                                    className="button button-primary"
-                                    disabled={!newComment.trim()}
-                                    aria-disabled={!newComment.trim()}
-                                    title={!newComment.trim() ? "Type a comment to post" : "Post comment (Ctrl+Enter)"}
-                                >
-                                    Post Comment
-                                </button>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                                    <small id="comment-hint" style={{ color: 'var(--secondary-text)' }}>
+                                        Press <kbd>Ctrl+Enter</kbd> (or <kbd>⌘+Enter</kbd>) to post
+                                    </small>
+                                    <button
+                                        type="button"
+                                        onClick={handleAddComment}
+                                        className="button button-primary"
+                                        disabled={!newComment.trim()}
+                                        aria-disabled={!newComment.trim()}
+                                        title={!newComment.trim() ? "Type a comment to post" : "Post comment (Ctrl+Enter or ⌘+Enter)"}
+                                    >
+                                        Post Comment
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
