@@ -208,6 +208,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ isOpen, onClos
                                         className="button button-primary"
                                         disabled={!newComment.trim()}
                                         aria-disabled={!newComment.trim()}
+                                        aria-describedby="comment-hint"
                                         title={!newComment.trim() ? "Type a comment to post" : "Post comment (Ctrl+Enter or ⌘+Enter)"}
                                     >
                                         Post Comment
