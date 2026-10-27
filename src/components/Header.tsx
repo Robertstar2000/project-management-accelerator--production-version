@@ -104,7 +104,14 @@ export const Header: React.FC<HeaderProps> = ({
                         <button onClick={onLogout} className="button button-small">Logout</button>
                     </div>
                 )}
-                <button onClick={onNewProject} className={isLandingPage ? "button button-primary" : "button"} disabled={disabled}>
+                <button
+                    type="button"
+                    onClick={onNewProject}
+                    className={isLandingPage ? "button button-primary" : "button"}
+                    disabled={disabled}
+                    aria-disabled={disabled}
+                    title={disabled ? 'API Key required to start a new project' : (isLandingPage ? 'Start Working' : 'New Project')}
+                >
                     {isLandingPage ? 'Start Working' : 'New Project'}
                 </button>
             </div>

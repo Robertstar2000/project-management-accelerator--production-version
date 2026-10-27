@@ -7,7 +7,15 @@ export const Hero = ({ onStart, disabled }) => (
     <p style={{ fontSize: '1.2rem', color: 'var(--secondary-text)', maxWidth: '700px', margin: '0 auto 2.5rem' }}>
       An AI-powered companion that guides you through the full lifecycle of a project using proven HMAP methodologies.
     </p>
-    <button onClick={onStart} className="button button-primary" style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', marginBottom: '1.5rem' }}>
+    <button
+      type="button"
+      onClick={onStart}
+      className="button button-primary"
+      style={{ padding: '1rem 2.5rem', fontSize: '1.2rem', marginBottom: '1.5rem' }}
+      disabled={disabled}
+      aria-disabled={disabled}
+      title={disabled ? 'API Key required to start a new project' : 'Start Working'}
+    >
       Start Working
     </button>
     <div style={{ maxWidth: '800px', margin: '0 auto 2rem', padding: '1.5rem', background: 'var(--card-background)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
