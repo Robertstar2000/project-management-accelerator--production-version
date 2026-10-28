@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface Notification {
     recipientName: string;
@@ -14,6 +14,26 @@ interface NotificationModalProps {
 }
 
 export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, onClose, onSend, notification }) => {
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => modalRef.current?.focus(), 50);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleEsc = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
+
     if (!isOpen || !notification) return null;
 
     const { recipientName, recipientEmail, taskName } = notification;
@@ -23,8 +43,20 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content" style={{maxWidth: '600px'}} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="notification-modal-title">
-                <h2 id="notification-modal-title">Task Notification Ready</h2>
+            <div
+                className="modal-content"
+                style={{ maxWidth: '600px' }}
+                onClick={(e) => e.stopPropagation()}
+                ref={modalRef}
+                tabIndex={-1}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="notification-modal-title"
+            >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <h2 id="notification-modal-title" style={{ margin: 0 }}>Task Notification Ready</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close task notification">&times;</button>
+                </div>
                 <p style={{color: 'var(--secondary-text)', marginBottom: '1.5rem'}}>An automated notification has been drafted for the next team member.</p>
                 
                 <div className="email-draft" style={{background: 'var(--background-color)', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border-color)'}}>
