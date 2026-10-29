@@ -11,6 +11,7 @@ interface AiReportModalProps {
 
 export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, title, content, onAddToDocuments }) => {
     const [copyButtonText, setCopyButtonText] = useState('Copy to Clipboard');
+    const [copyAnnouncement, setCopyAnnouncement] = useState('');
     const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -36,11 +37,19 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, t
     const handleCopy = () => {
         navigator.clipboard.writeText(content).then(() => {
             setCopyButtonText('Copied!');
-            setTimeout(() => setCopyButtonText('Copy to Clipboard'), 2000);
+            setCopyAnnouncement('Report content copied to clipboard.');
+            setTimeout(() => {
+                setCopyButtonText('Copy to Clipboard');
+                setCopyAnnouncement('');
+            }, 2000);
         }, (err) => {
             console.error('Could not copy text: ', err);
             setCopyButtonText('Copy Failed');
-             setTimeout(() => setCopyButtonText('Copy to Clipboard'), 2000);
+            setCopyAnnouncement('Failed to copy report content.');
+            setTimeout(() => {
+                setCopyButtonText('Copy to Clipboard');
+                setCopyAnnouncement('');
+            }, 2000);
         });
     };
     
@@ -85,9 +94,10 @@ export const AiReportModal: React.FC<AiReportModalProps> = ({ isOpen, onClose, t
                 </div>
                 
                 <div className="modal-actions" style={{justifyContent: 'space-between', flexShrink: 0, alignItems: 'center'}}>
-                    <div style={{display: 'flex', gap: '1rem'}}>
-                        <button type="button" className="button" onClick={handleCopy}>{copyButtonText}</button>
+                    <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+                        <button type="button" className="button" onClick={handleCopy} aria-label="Copy report content">{copyButtonText}</button>
                         <button type="button" className="button" onClick={handleDownload}>Download (.md)</button>
+                        <span className="sr-only" role="status" aria-live="polite">{copyAnnouncement}</span>
                     </div>
                     <div style={{display: 'flex', gap: '1rem'}}>
                         <button type="button" className="button" onClick={handleAddToProject}>Add to Project</button>
