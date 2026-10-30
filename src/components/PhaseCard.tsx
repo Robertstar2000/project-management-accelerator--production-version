@@ -100,7 +100,16 @@ export const PhaseCard: React.FC<PhaseCardProps> = ({ phase, project, phaseData,
 
     return (
         <div className={`phase-card ${isLocked ? 'locked' : ''} ${status}`}>
-             <div className="phase-header" onClick={handleToggle} role="button" tabIndex={0} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleToggle()} aria-expanded={isOpen}>
+             <div
+                className="phase-header"
+                onClick={handleToggle}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleToggle()}
+                aria-expanded={!isLocked ? isOpen : undefined}
+                aria-disabled={isLocked}
+                title={isLocked ? (lockReason || 'Complete previous phases to unlock') : (isOpen ? 'Click to collapse' : 'Click to expand')}
+             >
                 <div>
                     <h3 id={`phase-title-${phase.id}`}>{phase.title}</h3>
                     <p style={{color: 'var(--secondary-text)', fontSize: '0.9rem'}}>{phase.description}</p>
@@ -164,7 +173,7 @@ export const PhaseCard: React.FC<PhaseCardProps> = ({ phase, project, phaseData,
                             <>
                                 {phaseData && !isEditing && <button className="button" onClick={() => setIsEditing(true)}>Edit</button>}
                                 {isEditing && <button className="button button-primary" onClick={handleSave} onMouseDown={(e) => e.preventDefault()}>Save Changes</button>}
-                                {phaseData && <button className="button" onClick={() => onComplete(phase.id)} onMouseDown={(e) => e.preventDefault()} disabled={status === 'completed'}>Mark as Complete</button>}
+                                {phaseData && <button className="button" onClick={() => onComplete(phase.id)} onMouseDown={(e) => e.preventDefault()} disabled={status === 'completed'} title={status === 'completed' ? 'Phase is already marked as complete' : undefined}>Mark as Complete</button>}
                             </>
                         )}
                     </div>
