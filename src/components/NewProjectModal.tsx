@@ -131,7 +131,10 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content project-manager-modal" onClick={(e) => e.stopPropagation()} ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <h2 id="modal-title">Projects</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0 }}>
+          <h2 id="modal-title" style={{ margin: 0 }}>Projects</h2>
+          <button type="button" onClick={resetAndClose} className="button-close" aria-label="Close projects">&times;</button>
+        </div>
         <div className="modal-tabs" role="tablist">
             <button type="button" role="tab" onClick={() => setActiveTab('select')} className={activeTab === 'select' ? 'active' : ''} aria-selected={activeTab === 'select'}>Active Projects</button>
             <button type="button" role="tab" onClick={() => setActiveTab('create')} className={activeTab === 'create' ? 'active' : ''} aria-selected={activeTab === 'create'}>Create New</button>
@@ -147,8 +150,8 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
                                     <span>{p.discipline} ({p.mode || 'fullscale'}, {p.scope || 'internal'}, {p.teamSize} team)</span>
                                 </div>
                                 <div className="project-actions">
-                                    <button onClick={() => handleSelect(p)} className="button button-small" disabled={!ai}>Open</button>
-                                    <button onClick={(e) => { e.stopPropagation(); onRequestDelete(p); }} className="button button-small button-danger" disabled={!ai}>Delete</button>
+                                    <button type="button" onClick={() => handleSelect(p)} className="button button-small" disabled={!ai} aria-label={`Open project ${p.name}`}>Open</button>
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); onRequestDelete(p); }} className="button button-small button-danger" disabled={!ai} aria-label={`Delete project ${p.name}`}>Delete</button>
                                 </div>
                             </li>
                         ))}
@@ -158,6 +161,9 @@ export const NewProjectModal = ({ isOpen, onClose, onCreateProject, projects, on
                         <p>No active projects. Click 'Create New' to start one.</p>
                     </div>
                 )}
+                <div className="modal-actions" style={{ marginTop: '1rem', padding: '0' }}>
+                    <button type="button" className="button" onClick={resetAndClose}>Close</button>
+                </div>
             </div>
         )}
         {activeTab === 'create' && (
