@@ -185,6 +185,21 @@ export const GlobalStyles = `
     font-size: 2rem;
     line-height: 1;
     cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  }
+  .button-close:hover {
+    color: var(--primary-text);
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  .button-close:focus-visible {
+    color: var(--primary-text);
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
   }
 
   .section-title {
@@ -539,6 +554,10 @@ export const GlobalStyles = `
     transform: scale(1.1);
     box-shadow: 0 6px 15px rgba(0, 242, 255, 0.4);
   }
+  .help-fab:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 3px;
+  }
   
   .back-to-top-fab {
     position: fixed;
@@ -562,6 +581,10 @@ export const GlobalStyles = `
   .back-to-top-fab.visible {
       opacity: 1;
       transform: translateY(0);
+  }
+  .back-to-top-fab:focus-visible {
+    outline: 3px solid var(--accent-color);
+    outline-offset: 3px;
   }
 
   /* Help Modal */
