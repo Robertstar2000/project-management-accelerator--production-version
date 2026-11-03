@@ -185,6 +185,17 @@ export const GlobalStyles = `
     font-size: 2rem;
     line-height: 1;
     cursor: pointer;
+    border-radius: 4px;
+    padding: 0 0.25rem;
+    transition: color 0.2s ease, outline 0.2s ease;
+  }
+  .button-close:hover {
+    color: var(--primary-text);
+  }
+  .button-close:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    color: var(--primary-text);
   }
 
   .section-title {
