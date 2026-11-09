@@ -889,13 +889,70 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ project, onB
                 <h1>{projectData.name}</h1>
                 <p>{projectData.discipline}</p>
             </div>
-            <nav className="dashboard-nav">
-                <button onClick={() => handleTabChange('Dashboard')} className={activeTab === 'Dashboard' ? 'active' : ''} disabled={!isPlanningComplete}>Dashboard</button>
-                <button onClick={() => handleTabChange('Project Phases')} className={activeTab === 'Project Phases' ? 'active' : ''}>Project Phases</button>
-                <button onClick={() => handleTabChange('Documents')} className={activeTab === 'Documents' ? 'active' : ''}>Documents</button>
-                <button onClick={() => handleTabChange('Project Tracking')} className={activeTab === 'Project Tracking' ? 'active' : ''} disabled={!isPlanningComplete}>Project Tracking</button>
-                <button onClick={() => handleTabChange('Revision Control')} className={activeTab === 'Revision Control' ? 'active' : ''} disabled={!isPlanningComplete}>Revision Control</button>
-                <button onClick={() => handleTabChange('Testing')} className={activeTab === 'Testing' ? 'active' : ''}>Testing</button>
+            <nav className="dashboard-nav" role="tablist" aria-label="Project views">
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Dashboard'}
+                    aria-disabled={!isPlanningComplete}
+                    title={!isPlanningComplete ? 'Approve all planning documents in Project Phases to unlock' : undefined}
+                    onClick={() => handleTabChange('Dashboard')}
+                    className={activeTab === 'Dashboard' ? 'active' : ''}
+                    disabled={!isPlanningComplete}
+                >
+                    Dashboard
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Project Phases'}
+                    onClick={() => handleTabChange('Project Phases')}
+                    className={activeTab === 'Project Phases' ? 'active' : ''}
+                >
+                    Project Phases
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Documents'}
+                    onClick={() => handleTabChange('Documents')}
+                    className={activeTab === 'Documents' ? 'active' : ''}
+                >
+                    Documents
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Project Tracking'}
+                    aria-disabled={!isPlanningComplete}
+                    title={!isPlanningComplete ? 'Approve all planning documents in Project Phases to unlock' : undefined}
+                    onClick={() => handleTabChange('Project Tracking')}
+                    className={activeTab === 'Project Tracking' ? 'active' : ''}
+                    disabled={!isPlanningComplete}
+                >
+                    Project Tracking
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Revision Control'}
+                    aria-disabled={!isPlanningComplete}
+                    title={!isPlanningComplete ? 'Approve all planning documents in Project Phases to unlock' : undefined}
+                    onClick={() => handleTabChange('Revision Control')}
+                    className={activeTab === 'Revision Control' ? 'active' : ''}
+                    disabled={!isPlanningComplete}
+                >
+                    Revision Control
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === 'Testing'}
+                    onClick={() => handleTabChange('Testing')}
+                    className={activeTab === 'Testing' ? 'active' : ''}
+                >
+                    Testing
+                </button>
             </nav>
             {isParsingPlan && <div className="status-message loading" style={{marginBottom: '2rem'}}><div className="spinner"></div><p>Parsing project plan and populating tracking tools...</p></div>}
             
