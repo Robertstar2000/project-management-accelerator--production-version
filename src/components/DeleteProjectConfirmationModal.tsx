@@ -43,8 +43,11 @@ export const DeleteProjectConfirmationModal: React.FC<DeleteProjectConfirmationM
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()} ref={modalRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexShrink: 0 }}>
+                    <h2 id="delete-modal-title" style={{ color: 'var(--error-color)', margin: 0 }}>Warning: Project Deletion</h2>
+                    <button type="button" onClick={onClose} className="button-close" aria-label="Close delete confirmation">&times;</button>
+                </div>
                 <form onSubmit={handleSubmit}>
-                    <h2 id="delete-modal-title" style={{ color: 'var(--error-color)' }}>Warning: Project Deletion</h2>
                     <p className="modal-warning-text">
                         You are about to permanently delete the project "<strong>{projectName}</strong>". All of its associated data will be lost. This action cannot be undone.
                     </p>

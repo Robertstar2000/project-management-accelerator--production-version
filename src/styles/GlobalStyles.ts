@@ -190,7 +190,7 @@ export const GlobalStyles = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, outline 0.2s ease;
   }
   .button-close:hover {
     color: var(--primary-text);
