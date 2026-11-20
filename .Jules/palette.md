@@ -13,3 +13,7 @@
 ## 2026-10-23 - Keyboard Focusability and Explanatory Tooltips for Disabled Cards
 **Learning:** Setting `tabIndex={-1}` on disabled interactive cards or buttons completely hides them from keyboard tab order, preventing keyboard users from discovering the element or learning why it is disabled.
 **Action:** Keep interactive card containers in tab order (`tabIndex={0}`) with `aria-disabled="true"` and a descriptive `title` / `aria-label` attribute explaining the prerequisite required to enable the action.
+
+## 2026-10-28 - Visible Focus Rings & Hover Feedback for Modal Close & Floating Action Buttons
+**Learning:** Icon/character buttons without default button styles (like modal close buttons `.button-close` and fixed action buttons `.help-fab`, `.back-to-top-fab`) become completely invisible to keyboard navigators when focused if only default button styles were reset.
+**Action:** Ensure custom non-standard buttons explicitly define `:focus-visible` with high-contrast accent outlines and clear `:hover` background/color feedback in `GlobalStyles.ts`.
